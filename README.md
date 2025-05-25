@@ -5,9 +5,14 @@ AI-powered meme generator with Prisma database and Twitter sharing capabilities.
 ## 🌟 Features
 
 - 🎨 AI-powered meme generation
+<<<<<<< HEAD
 - 📚 Persistent meme database with Prisma
 - 🌐 **IPFS storage** via Pinata for permanent, decentralized meme hosting
 - 🐦 Enhanced Twitter sharing with image upload
+=======
+- 📚 Persistent meme database with Prisma 
+- 🐦 Enhanced Twitter sharing with image upload 
+>>>>>>> ee743f42c9975939f2c5afa99997bb5d6907281a
 - 💾 Reliable meme downloads
 - 📊 Meme statistics and analytics
 - 🗑️ Meme management (delete, view all)

@@ -28,8 +28,14 @@ app.use(express.static(__dirname, {
         if (path.endsWith('.js')) {
             res.setHeader('Content-Type', 'application/javascript');
         }
+        if (path.endsWith('.gif') || path.endsWith('.png') || path.endsWith('.jpg')) {
+            res.setHeader('Content-Type', 'image/' + path.split('.').pop());
+        }
     }
 }));
+
+// Serve public directory for assets
+app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // Serve the main HTML file
 app.get('/', (req, res) => {

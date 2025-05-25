@@ -1020,6 +1020,35 @@ async function updateMemeWithIPFS(originalImageUrl, ipfsHash) {
 
 // Initialize the meme database
 const memeDB = new MemeDatabase();
+
+// Load existing memes when page loads
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🔄 Loading existing memes from database...');
+
+    // Show loading indicator
+    const galleryContainer = document.getElementById('memeGallery');
+    if (galleryContainer) {
+        galleryContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #00ff88;">🔄 Loading memes...</div>';
+    }
+
+    try {
+        await memeDB.loadMemes();
+        console.log('✅ Page loaded with existing memes');
+    } catch (error) {
+        console.error('❌ Failed to load memes:', error);
+        if (galleryContainer) {
+            galleryContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #ff6b6b;">❌ Failed to load memes</div>';
+        }
+    }
+});
+
+// Function to manually refresh gallery (can be called from console)
+window.refreshMemeGallery = async () => {
+    console.log('🔄 Manually refreshing meme gallery...');
+    await memeDB.loadMemes();
+    console.log('✅ Gallery refreshed');
+};
+
 let memeGallery = []; // Keep for backward compatibility
 
 function generateAIMeme(type) {

@@ -2446,13 +2446,169 @@ function showCORSStatus() {
 }
 
 async function shareAIMeme() {
-    const allText = textElements
-        .filter(el => !el.isBranding)
-        .map(el => el.text)
-        .join(' | ');
+    try {
+        showDownloadStatus('🐦 Preparing Twitter share...', 'info');
 
-    // Show sharing options modal
-    showSharingModal(allText);
+        // Get the meme text
+        const allText = textElements
+            .filter(el => !el.isBranding)
+            .map(el => el.text)
+            .join(' | ');
+
+        const memeText = allText || currentAIMeme.text || 'Custom $CRYPTO Meme';
+
+        // Create Twitter share URL with the meme text and crypto promotion
+        const tweetText = `Just generated this fire $CRYPTO meme! 🔥🚀\n\n"${memeText}"\n\n#CRYPTO #DeFi #Memes #ToTheMoon 💎🙌\n\nGenerate your own at: ${window.location.origin}`;
+        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+
+        // Show helpful reminder modal
+        showShareReminderModal(twitterUrl);
+
+    } catch (error) {
+        console.error('Share failed:', error);
+        showDownloadStatus('❌ Share failed - try downloading instead', 'error');
+    }
+}
+
+function showShareReminderModal(twitterUrl) {
+    // Create modal overlay
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        backdrop-filter: blur(5px);
+    `;
+
+    // Create modal content
+    const modalContent = document.createElement('div');
+    modalContent.style.cssText = `
+        background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+        padding: 30px;
+        border-radius: 20px;
+        max-width: 500px;
+        width: 90%;
+        text-align: center;
+        border: 2px solid #00ff88;
+        box-shadow: 0 0 30px rgba(0,255,136,0.3);
+        position: relative;
+    `;
+
+    modalContent.innerHTML = `
+        <div style="font-size: 3rem; margin-bottom: 20px;">🐦📸</div>
+        <h3 style="color: #00ff88; margin-bottom: 20px; font-size: 1.5rem;">Share Your $CRYPTO Meme!</h3>
+
+        <div style="background: rgba(0,255,136,0.1); padding: 20px; border-radius: 15px; margin: 20px 0; border: 1px solid rgba(0,255,136,0.3);">
+            <p style="color: #fff; margin: 0 0 15px 0; font-size: 1.1rem; font-weight: bold;">📋 Quick Steps:</p>
+            <div style="text-align: left; color: #ccc; font-size: 0.95rem; line-height: 1.6;">
+                <p style="margin: 8px 0;">1️⃣ <strong>Download your meme</strong> first (use Download button)</p>
+                <p style="margin: 8px 0;">2️⃣ <strong>Click "Open Twitter"</strong> below</p>
+                <p style="margin: 8px 0;">3️⃣ <strong>Upload your meme image</strong> to the tweet</p>
+                <p style="margin: 8px 0;">4️⃣ <strong>Post and spread the $CRYPTO love!</strong> 🚀</p>
+            </div>
+        </div>
+
+        <div style="background: rgba(255,255,0,0.1); padding: 15px; border-radius: 10px; margin: 20px 0; border: 1px solid rgba(255,255,0,0.3);">
+            <p style="color: #ffff00; margin: 0; font-size: 0.9rem; font-weight: bold;">
+                💡 <strong>Pro Tip:</strong> The tweet text is already filled out for maximum $CRYPTO exposure!
+            </p>
+        </div>
+
+        <div style="display: flex; gap: 15px; justify-content: center; margin-top: 25px; flex-wrap: wrap;">
+            <button id="openTwitterBtn" style="
+                background: linear-gradient(45deg, #1da1f2, #0d8bd9);
+                color: white;
+                border: none;
+                padding: 12px 25px;
+                border-radius: 25px;
+                font-size: 1rem;
+                font-weight: bold;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 15px rgba(29,161,242,0.3);
+            ">🐦 Open Twitter</button>
+
+            <button id="downloadFirstBtn" style="
+                background: linear-gradient(45deg, #00ff88, #00cc6a);
+                color: #000;
+                border: none;
+                padding: 12px 25px;
+                border-radius: 25px;
+                font-size: 1rem;
+                font-weight: bold;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 15px rgba(0,255,136,0.3);
+            ">💾 Download First</button>
+
+            <button id="closeModalBtn" style="
+                background: rgba(255,255,255,0.1);
+                color: #ccc;
+                border: 1px solid rgba(255,255,255,0.3);
+                padding: 12px 25px;
+                border-radius: 25px;
+                font-size: 1rem;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            ">✕ Close</button>
+        </div>
+    `;
+
+    modal.appendChild(modalContent);
+    document.body.appendChild(modal);
+
+    // Add event listeners
+    document.getElementById('openTwitterBtn').onclick = () => {
+        window.open(twitterUrl, '_blank');
+        showDownloadStatus('🐦 Twitter opened! Don\'t forget to upload your meme image!', 'success');
+        document.body.removeChild(modal);
+    };
+
+    document.getElementById('downloadFirstBtn').onclick = () => {
+        document.body.removeChild(modal);
+        downloadAIMeme();
+        setTimeout(() => {
+            showShareReminderModal(twitterUrl);
+        }, 2000);
+    };
+
+    document.getElementById('closeModalBtn').onclick = () => {
+        document.body.removeChild(modal);
+    };
+
+    // Close on background click
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            document.body.removeChild(modal);
+        }
+    };
+
+    // Add hover effects
+    const buttons = modalContent.querySelectorAll('button');
+    buttons.forEach(btn => {
+        btn.onmouseenter = () => {
+            btn.style.transform = 'translateY(-2px)';
+            btn.style.boxShadow = btn.style.boxShadow.replace('15px', '20px');
+        };
+        btn.onmouseleave = () => {
+            btn.style.transform = 'translateY(0)';
+            btn.style.boxShadow = btn.style.boxShadow.replace('20px', '15px');
+        };
+    });
+
+    // Animate modal in
+    gsap.from(modalContent, {
+        scale: 0,
+        duration: 0.5,
+        ease: "back.out(1.7)"
+    });
 }
 
 function showSharingModal(memeText) {

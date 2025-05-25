@@ -3273,3 +3273,1150 @@ document.addEventListener('click', () => {
 console.log("🚀 Welcome to the CRYPTO degen playground! 🚀");
 console.log("If you're reading this, you're already too deep...");
 console.log("Try the Konami code: ↑↑↓↓←→←→BA");
+
+// ===== GLOBAL FOMO METER SYSTEM =====
+class GlobalFOMOMeter {
+    constructor() {
+        this.apiUrl = `${window.location.origin}/api/fomo`;
+        this.userId = this.generateUserId();
+        this.userLocation = null;
+        this.currentLevel = 1;
+        this.map = null;
+        this.mapMarkers = [];
+        this.lastClickTime = 0;
+        this.recentClicks = []; // Track recent clicks for speed demon achievement
+        this.localClicks = 0; // Local counter for instant feedback
+        this.localGlobalClicks = 42069; // Local global counter for instant updates
+
+        this.fomoLevels = [
+            { threshold: 0, name: "😐 Mild Interest", class: "fomo-level-1" },
+            { threshold: 1000, name: "😮 Getting Excited", class: "fomo-level-2" },
+            { threshold: 10000, name: "🤯 MAXIMUM FOMO", class: "fomo-level-3" },
+            { threshold: 50000, name: "🚀 ABSOLUTELY UNHINGED", class: "fomo-level-4" }
+        ];
+
+        this.achievementsList = [
+            { id: 'first-click', name: 'First Click', desc: 'Click the FOMO button', icon: '🎯', threshold: 1 },
+            { id: 'ten-clicks', name: 'Getting Started', desc: '10 clicks', icon: '🚀', threshold: 10 },
+            { id: 'fifty-clicks', name: 'FOMO Rising', desc: '50 clicks', icon: '📈', threshold: 50 },
+            { id: 'hundred-club', name: 'Hundred Club', desc: '100 clicks', icon: '💯', threshold: 100 },
+            { id: 'five-hundred', name: 'FOMO Addict', desc: '500 clicks', icon: '🤯', threshold: 500 },
+            { id: 'thousand-club', name: 'Thousand Club', desc: '1000 clicks', icon: '👑', threshold: 1000 },
+            { id: 'fomo-spreader', name: 'FOMO Spreader', desc: 'Share on Twitter', icon: '🌍', threshold: 0 },
+            { id: 'degen-streak', name: 'Degen Streak', desc: '7 days in a row', icon: '🔥', threshold: 7 },
+            { id: 'mega-streak', name: 'Mega Streak', desc: '30 days in a row', icon: '⚡', threshold: 30 },
+            { id: 'early-adopter', name: 'Early Adopter', desc: 'Join in first 1000 users', icon: '🏆', threshold: 0 },
+            { id: 'speed-demon', name: 'Speed Demon', desc: 'Click 10 times in 1 minute', icon: '💨', threshold: 0 },
+            { id: 'night-owl', name: 'Night Owl', desc: 'Click between 2-4 AM', icon: '🦉', threshold: 0 }
+        ];
+
+        this.init();
+    }
+
+    generateUserId() {
+        let userId = localStorage.getItem('fomoUserId');
+        if (!userId) {
+            userId = 'user_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+            localStorage.setItem('fomoUserId', userId);
+        }
+        return userId;
+    }
+
+    async init() {
+        this.setupEventListeners();
+        this.initializeMap();
+        this.startLocationTracking();
+        await this.loadInitialData();
+        this.startRealTimeUpdates();
+
+        console.log("🎯 FOMO Meter initialized! Let the chaos begin!");
+    }
+
+    initializeMap() {
+        try {
+            // Initialize Leaflet map
+            this.map = L.map('worldMap', {
+                center: [20, 0],
+                zoom: 2,
+                zoomControl: true,
+                scrollWheelZoom: true
+            });
+
+            // Add dark theme tile layer
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 19
+            }).addTo(this.map);
+
+            console.log("🗺️ Interactive map initialized!");
+        } catch (error) {
+            console.error("Failed to initialize map:", error);
+            // Fallback to placeholder
+            document.getElementById('worldMap').innerHTML = '<div class="map-placeholder">🗺️ Map loading failed, but FOMO continues!</div>';
+        }
+    }
+
+    updateMeterInstantly() {
+        // Increment local counters immediately for instant feedback
+        this.localClicks++;
+        this.localGlobalClicks++;
+
+        // Update displays instantly
+        document.getElementById('userClicks').textContent = `Your clicks: ${this.localClicks}`;
+        document.getElementById('globalClicks').textContent = this.localGlobalClicks.toLocaleString();
+
+        // Update thermometer fill instantly
+        this.updateFOMOLevelInstant(this.localGlobalClicks);
+
+        // Add instant activity
+        this.addActivityItem(`🚀 You just pumped the FOMO! Local power: ${this.localClicks}!`);
+    }
+
+    updateFOMOLevelInstant(clicks) {
+        let newLevel = 1;
+        for (let i = this.fomoLevels.length - 1; i >= 0; i--) {
+            if (clicks >= this.fomoLevels[i].threshold) {
+                newLevel = i + 1;
+                break;
+            }
+        }
+
+        // Update thermometer fill instantly
+        const maxLevel = this.fomoLevels[this.fomoLevels.length - 1].threshold;
+        const fillPercentage = Math.min(100, (clicks / maxLevel) * 100);
+        const fomoFill = document.getElementById('fomoFill');
+        if (fomoFill) {
+            fomoFill.style.height = fillPercentage + '%';
+
+            // Add a quick pulse effect for satisfaction
+            fomoFill.style.transform = 'scale(1.05)';
+            setTimeout(() => {
+                fomoFill.style.transform = 'scale(1)';
+            }, 150);
+        }
+
+        // Update level display
+        document.getElementById('currentLevel').textContent = this.fomoLevels[newLevel - 1]?.name || "😐 Mild Interest";
+
+        // Update level indicators
+        document.querySelectorAll('.fomo-level').forEach((level, index) => {
+            level.classList.toggle('active', index + 1 === newLevel);
+        });
+    }
+
+    async loadInitialData() {
+        try {
+            // Load global stats
+            const statsResponse = await fetch(`${this.apiUrl}/stats`);
+            if (statsResponse.ok) {
+                const stats = await statsResponse.json();
+                this.localGlobalClicks = stats.totalClicks; // Sync local counter
+                this.updateStatsDisplay(stats);
+            }
+
+            // Load user stats
+            const userResponse = await fetch(`${this.apiUrl}/user/${this.userId}`);
+            if (userResponse.ok) {
+                const userData = await userResponse.json();
+                this.localClicks = userData.totalClicks; // Sync local counter
+                this.updateUserDisplay(userData);
+            }
+
+            // Load leaderboards
+            const leaderboardResponse = await fetch(`${this.apiUrl}/leaderboards`);
+            if (leaderboardResponse.ok) {
+                const leaderboards = await leaderboardResponse.json();
+                this.updateLeaderboards(leaderboards);
+            }
+
+            // Load recent clicks for map
+            this.loadRecentClicks();
+
+        } catch (error) {
+            console.error("Failed to load initial data:", error);
+            // Use fallback data
+            this.updateStatsDisplay({
+                totalClicks: 42069,
+                currentLevel: 1,
+                onlineUsers: 500
+            });
+        }
+    }
+
+    setupEventListeners() {
+        const fomoButton = document.getElementById('fomoButton');
+        if (fomoButton) {
+            fomoButton.addEventListener('click', () => this.handleFOMOClick());
+        }
+
+        // Add FOMO share button listener
+        const fomoShareButton = document.getElementById('fomoShareButton');
+        if (fomoShareButton) {
+            fomoShareButton.addEventListener('click', () => this.shareFOMOStats());
+        }
+
+        // Add click effects to achievements
+        document.querySelectorAll('.achievement').forEach(achievement => {
+            achievement.addEventListener('click', () => {
+                if (achievement.classList.contains('unlocked')) {
+                    this.shareAchievement(achievement.dataset.achievement);
+                }
+            });
+        });
+    }
+
+    async startLocationTracking() {
+        try {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        this.userLocation = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        this.addMapDot(this.userLocation);
+                        console.log("📍 Location tracked for FOMO mapping!");
+                    },
+                    (error) => {
+                        console.log("📍 Location not available, using random location for demo");
+                        this.userLocation = {
+                            lat: Math.random() * 180 - 90,
+                            lng: Math.random() * 360 - 180
+                        };
+                        this.addMapDot(this.userLocation);
+                    }
+                );
+            }
+        } catch (error) {
+            console.log("📍 Geolocation not supported, using demo mode");
+        }
+    }
+
+    async handleFOMOClick() {
+        // Much more lenient rate limiting - allow fast clicks!
+        const now = Date.now();
+        if (now - this.lastClickTime < 200) { // Only 200ms instead of 1000ms
+            return; // Just ignore, don't show annoying message
+        }
+
+        // Track clicks for speed demon achievement
+        this.recentClicks.push(now);
+        // Keep only clicks from last minute
+        this.recentClicks = this.recentClicks.filter(time => now - time < 60000);
+
+        this.lastClickTime = now;
+
+        // INSTANT visual feedback - update meter immediately!
+        this.updateMeterInstantly();
+
+        try {
+            // Visual effects first for immediate feedback
+            this.createClickEffect();
+
+            // Button animation
+            const button = document.getElementById('fomoButton');
+            gsap.to(button, {
+                scale: 1.2,
+                duration: 0.1,
+                yoyo: true,
+                repeat: 1,
+                ease: "power2.out"
+            });
+
+            // Get location info
+            const locationData = await this.getLocationData();
+
+            // Send click to database
+            const response = await fetch(`${this.apiUrl}/click`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    userId: this.userId,
+                    latitude: this.userLocation?.lat,
+                    longitude: this.userLocation?.lng,
+                    country: locationData.country,
+                    city: locationData.city
+                })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+
+                // Update displays with real data
+                this.updateStatsDisplay(result.globalStats);
+
+                // Add map marker
+                if (this.userLocation && this.map) {
+                    this.addMapMarker(this.userLocation.lat, this.userLocation.lng, true);
+                }
+
+                // Reload user stats and leaderboards
+                this.loadUserStats();
+                this.loadLeaderboards();
+                this.loadRecentClicks();
+
+                // Check for achievements after successful click
+                this.checkAndAwardAchievements();
+
+                // Check for speed demon achievement
+                this.checkSpeedDemonAchievement();
+
+                // Add activity
+                this.addActivityItem(`🚀 You just pumped the global FOMO! 🔥`);
+
+                console.log(`🎯 FOMO PUMPED! Response:`, result);
+            } else if (response.status === 429) {
+                this.showMessage("🚫 Rate limited! Please wait before clicking again.", 'error');
+            } else {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+        } catch (error) {
+            console.error("Failed to record FOMO click:", error);
+            this.showMessage("❌ Failed to record click, but your FOMO is still valid!", 'error');
+        }
+    }
+
+    async checkSpeedDemonAchievement() {
+        // Check if user clicked 10 times in the last minute
+        if (this.recentClicks.length >= 10) {
+            try {
+                const response = await fetch(`${this.apiUrl}/user/${this.userId}`);
+                if (response.ok) {
+                    const userData = await response.json();
+                    const currentAchievements = userData.achievements || [];
+
+                    if (!currentAchievements.includes('speed-demon')) {
+                        const newAchievements = [...currentAchievements, 'speed-demon'];
+                        await this.updateAchievementsInDatabase(newAchievements);
+                        this.showAchievementNotification('speed-demon');
+                        this.animateAchievementUnlock('speed-demon');
+                        this.addActivityItem(`💨 Speed Demon achievement unlocked! 10 clicks in 1 minute!`);
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to check speed demon achievement:", error);
+            }
+        }
+    }
+
+    async getLocationData() {
+        // Try to get country/city from IP geolocation API
+        try {
+            const response = await fetch('https://ipapi.co/json/');
+            if (response.ok) {
+                const data = await response.json();
+                return {
+                    country: data.country_name,
+                    city: data.city
+                };
+            }
+        } catch (error) {
+            console.log("IP geolocation failed, using fallback");
+        }
+
+        // Fallback to random data
+        const countries = ['United States', 'China', 'India', 'Germany', 'Japan', 'United Kingdom', 'France', 'Canada', 'Australia', 'Brazil'];
+        const cities = ['Degen City', 'Diamond District', 'Moon Base Alpha', 'Clown Town', 'Ape Island'];
+
+        return {
+            country: countries[Math.floor(Math.random() * countries.length)],
+            city: cities[Math.floor(Math.random() * cities.length)]
+        };
+    }
+
+    createClickEffect() {
+        const button = document.getElementById('fomoButton');
+        const rect = button.getBoundingClientRect();
+
+        // Create explosion effect
+        for (let i = 0; i < 8; i++) {
+            const particle = document.createElement('div');
+            particle.innerHTML = ['🚀', '💎', '🔥', '⚡', '💀', '🤯'][Math.floor(Math.random() * 6)];
+            particle.style.position = 'fixed';
+            particle.style.left = (rect.left + rect.width / 2) + 'px';
+            particle.style.top = (rect.top + rect.height / 2) + 'px';
+            particle.style.fontSize = '2rem';
+            particle.style.pointerEvents = 'none';
+            particle.style.zIndex = '9999';
+
+            document.body.appendChild(particle);
+
+            const angle = (i / 8) * Math.PI * 2;
+            const distance = 100 + Math.random() * 50;
+
+            gsap.to(particle, {
+                x: Math.cos(angle) * distance,
+                y: Math.sin(angle) * distance,
+                opacity: 0,
+                scale: 0,
+                duration: 1,
+                ease: "power2.out",
+                onComplete: () => particle.remove()
+            });
+        }
+    }
+
+    updateStatsDisplay(stats) {
+        // Update global counters
+        document.getElementById('globalClicks').textContent = stats.totalClicks.toLocaleString();
+        document.getElementById('currentLevel').textContent = this.fomoLevels[stats.currentLevel - 1]?.name || "😐 Mild Interest";
+        document.getElementById('onlineUsers').textContent = stats.onlineUsers;
+
+        // Update FOMO level
+        this.updateFOMOLevel(stats.totalClicks);
+    }
+
+    updateUserDisplay(userData) {
+        document.getElementById('userClicks').textContent = `Your clicks: ${userData.totalClicks}`;
+        document.getElementById('userRank').textContent = `Rank: #${userData.rank}`;
+
+        // Update achievements
+        if (userData.achievements) {
+            this.updateAchievementsDisplay(userData.achievements);
+        }
+    }
+
+    async loadUserStats() {
+        try {
+            const response = await fetch(`${this.apiUrl}/user/${this.userId}`);
+            if (response.ok) {
+                const userData = await response.json();
+                this.updateUserDisplay(userData);
+            }
+        } catch (error) {
+            console.error("Failed to load user stats:", error);
+        }
+    }
+
+    async loadLeaderboards() {
+        try {
+            const response = await fetch(`${this.apiUrl}/leaderboards`);
+            if (response.ok) {
+                const leaderboards = await response.json();
+                this.updateLeaderboards(leaderboards);
+            }
+        } catch (error) {
+            console.error("Failed to load leaderboards:", error);
+        }
+    }
+
+    async loadRecentClicks() {
+        try {
+            const response = await fetch(`${this.apiUrl}/recent-clicks`);
+            if (response.ok) {
+                const clicks = await response.json();
+                this.updateMapWithClicks(clicks);
+            }
+        } catch (error) {
+            console.error("Failed to load recent clicks:", error);
+        }
+    }
+
+    updateMapWithClicks(clicks) {
+        if (!this.map) return;
+
+        // Clear existing markers
+        this.mapMarkers.forEach(marker => this.map.removeLayer(marker));
+        this.mapMarkers = [];
+
+        // Add new markers
+        clicks.forEach(click => {
+            if (click.latitude && click.longitude) {
+                const isRecent = (Date.now() - new Date(click.timestamp).getTime()) < 60000; // Last minute
+                this.addMapMarker(click.latitude, click.longitude, isRecent);
+            }
+        });
+    }
+
+    addMapMarker(lat, lng, isRecent = false) {
+        if (!this.map) return;
+
+        const marker = L.circleMarker([lat, lng], {
+            radius: isRecent ? 8 : 5,
+            fillColor: isRecent ? '#ff6b6b' : '#4ecdc4',
+            color: '#fff',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: isRecent ? 0.8 : 0.6
+        }).addTo(this.map);
+
+        // Add popup
+        marker.bindPopup(`🚀 FOMO Click!<br>${isRecent ? 'Just now!' : 'Recent activity'}`);
+
+        // Animate recent markers
+        if (isRecent) {
+            let scale = 1;
+            const animate = () => {
+                scale = scale === 1 ? 1.5 : 1;
+                marker.setRadius(scale * 8);
+                setTimeout(animate, 1000);
+            };
+            animate();
+        }
+
+        this.mapMarkers.push(marker);
+    }
+
+    updateFOMOLevel(totalClicks) {
+        let newLevel = 1;
+        for (let i = this.fomoLevels.length - 1; i >= 0; i--) {
+            if (totalClicks >= this.fomoLevels[i].threshold) {
+                newLevel = i + 1;
+                break;
+            }
+        }
+
+        if (newLevel !== this.currentLevel) {
+            this.currentLevel = newLevel;
+            this.applyFOMOLevelEffects();
+        }
+
+        // Update thermometer fill
+        const maxLevel = this.fomoLevels[this.fomoLevels.length - 1].threshold;
+        const fillPercentage = Math.min(100, (totalClicks / maxLevel) * 100);
+        document.getElementById('fomoFill').style.height = fillPercentage + '%';
+
+        // Update level display
+        document.getElementById('currentLevel').textContent = this.fomoLevels[this.currentLevel - 1].name;
+
+        // Update level indicators
+        document.querySelectorAll('.fomo-level').forEach((level, index) => {
+            level.classList.toggle('active', index + 1 === this.currentLevel);
+        });
+    }
+
+    applyFOMOLevelEffects() {
+        const body = document.body;
+
+        // Remove previous level classes
+        this.fomoLevels.forEach(level => {
+            body.classList.remove(level.class);
+        });
+
+        // Add current level class
+        body.classList.add(this.fomoLevels[this.currentLevel - 1].class);
+
+        // Special effects for level changes
+        if (this.currentLevel >= 3) {
+            this.createLevelUpEffect();
+        }
+    }
+
+    createLevelUpEffect() {
+        const announcement = document.createElement('div');
+        announcement.innerHTML = `🚨 FOMO LEVEL UP! ${this.fomoLevels[this.currentLevel - 1].name} 🚨`;
+        announcement.style.position = 'fixed';
+        announcement.style.top = '50%';
+        announcement.style.left = '50%';
+        announcement.style.transform = 'translate(-50%, -50%)';
+        announcement.style.background = 'linear-gradient(45deg, #ff6b6b, #4ecdc4)';
+        announcement.style.color = '#fff';
+        announcement.style.padding = '20px 40px';
+        announcement.style.borderRadius = '15px';
+        announcement.style.fontSize = '2rem';
+        announcement.style.fontWeight = 'bold';
+        announcement.style.zIndex = '10000';
+        announcement.style.border = '3px solid #fff';
+        announcement.style.boxShadow = '0 0 50px rgba(255, 255, 255, 0.8)';
+
+        document.body.appendChild(announcement);
+
+        gsap.from(announcement, {
+            scale: 0,
+            rotation: 360,
+            duration: 1,
+            ease: "back.out(1.7)"
+        });
+
+        setTimeout(() => {
+            gsap.to(announcement, {
+                opacity: 0,
+                scale: 0,
+                duration: 0.5,
+                onComplete: () => announcement.remove()
+            });
+        }, 3000);
+    }
+
+    async checkAndAwardAchievements() {
+        try {
+            // Get current user stats
+            const response = await fetch(`${this.apiUrl}/user/${this.userId}`);
+            if (!response.ok) return;
+
+            const userData = await response.json();
+            const currentAchievements = userData.achievements || [];
+            const newAchievements = [...currentAchievements];
+
+            // Check each achievement
+            this.achievementsList.forEach(achievement => {
+                if (!currentAchievements.includes(achievement.id)) {
+                    let unlocked = false;
+
+                    switch (achievement.id) {
+                        case 'first-click':
+                            unlocked = userData.totalClicks >= 1;
+                            break;
+                        case 'ten-clicks':
+                            unlocked = userData.totalClicks >= 10;
+                            break;
+                        case 'fifty-clicks':
+                            unlocked = userData.totalClicks >= 50;
+                            break;
+                        case 'hundred-club':
+                            unlocked = userData.totalClicks >= 100;
+                            break;
+                        case 'five-hundred':
+                            unlocked = userData.totalClicks >= 500;
+                            break;
+                        case 'thousand-club':
+                            unlocked = userData.totalClicks >= 1000;
+                            break;
+                        case 'degen-streak':
+                            unlocked = userData.streakDays >= 7;
+                            break;
+                        case 'mega-streak':
+                            unlocked = userData.streakDays >= 30;
+                            break;
+                        case 'early-adopter':
+                            // Check if user is in first 1000 users (simplified check)
+                            unlocked = userData.totalClicks > 0 && userData.rank <= 1000;
+                            break;
+                        case 'night-owl':
+                            // Check if current time is between 2-4 AM
+                            const hour = new Date().getHours();
+                            unlocked = (hour >= 2 && hour < 4) && userData.totalClicks > 0;
+                            break;
+                        // fomo-spreader and speed-demon are awarded separately
+                    }
+
+                    if (unlocked) {
+                        newAchievements.push(achievement.id);
+                        this.showAchievementNotification(achievement.id);
+                        this.animateAchievementUnlock(achievement.id);
+                    }
+                }
+            });
+
+            // Update achievements in database if any new ones were unlocked
+            if (newAchievements.length > currentAchievements.length) {
+                await this.updateAchievementsInDatabase(newAchievements);
+            }
+
+        } catch (error) {
+            console.error("Failed to check achievements:", error);
+        }
+    }
+
+    async updateAchievementsInDatabase(achievements) {
+        try {
+            const response = await fetch(`${this.apiUrl}/achievements`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    userId: this.userId,
+                    achievements: achievements
+                })
+            });
+
+            if (response.ok) {
+                console.log("✅ Achievements updated in database");
+                // Update the display
+                this.updateAchievementsDisplay(achievements);
+            }
+        } catch (error) {
+            console.error("Failed to update achievements:", error);
+        }
+    }
+
+    animateAchievementUnlock(achievementId) {
+        const achievementEl = document.querySelector(`[data-achievement="${achievementId}"]`);
+        if (achievementEl) {
+            achievementEl.classList.remove('locked');
+            achievementEl.classList.add('unlocked');
+
+            // Achievement unlock animation
+            gsap.from(achievementEl, {
+                scale: 0,
+                rotation: 360,
+                duration: 1,
+                ease: "back.out(1.7)"
+            });
+        }
+    }
+
+    showAchievementNotification(achievementId) {
+        const achievement = this.achievementsList.find(a => a.id === achievementId);
+        if (!achievement) return;
+
+        const notification = document.createElement('div');
+        notification.innerHTML = `
+            <div style="font-size: 2rem; margin-bottom: 10px;">${achievement.icon}</div>
+            <div style="font-size: 1.2rem; font-weight: bold;">Achievement Unlocked!</div>
+            <div style="font-size: 1rem;">${achievement.name}</div>
+        `;
+        notification.style.position = 'fixed';
+        notification.style.top = '20px';
+        notification.style.right = '20px';
+        notification.style.background = 'linear-gradient(45deg, #ff6b6b, #4ecdc4)';
+        notification.style.color = '#fff';
+        notification.style.padding = '20px';
+        notification.style.borderRadius = '15px';
+        notification.style.textAlign = 'center';
+        notification.style.zIndex = '9999';
+        notification.style.border = '3px solid #fff';
+        notification.style.boxShadow = '0 0 30px rgba(255, 255, 255, 0.5)';
+
+        document.body.appendChild(notification);
+
+        gsap.from(notification, {
+            x: 300,
+            opacity: 0,
+            duration: 0.5,
+            ease: "back.out(1.7)"
+        });
+
+        setTimeout(() => {
+            gsap.to(notification, {
+                x: 300,
+                opacity: 0,
+                duration: 0.5,
+                onComplete: () => notification.remove()
+            });
+        }, 4000);
+    }
+
+    async shareAchievement(achievementId) {
+        const achievement = this.achievementsList.find(a => a.id === achievementId);
+        if (!achievement) return;
+
+        // Create varied achievement share texts based on achievement type
+        const achievementShareTexts = {
+            'first-click': [
+                `🎯 FIRST BLOOD! Just unlocked "${achievement.name}" on the $CRYPTO FOMO meter! ${achievement.icon}\n\nThe addiction begins... Join the chaos!\n\n${window.location.origin}\n\n#CRYPTO #FOMO #FirstClick #Addicted`,
+                `🚀 Houston, we have liftoff! First click achieved! ${achievement.icon}\n\nWelcome to the $CRYPTO FOMO meter madness!\n\n${window.location.origin}\n\n#CRYPTO #FOMO #Liftoff #Welcome`,
+                `💀 RIP to my free time! Just got my first FOMO click! ${achievement.icon}\n\nThis is how it starts... join me in the abyss!\n\n${window.location.origin}\n\n#CRYPTO #FOMO #RIP #Abyss`
+            ],
+            'ten-clicks': [
+                `🚀 Getting Started achievement unlocked! ${achievement.icon}\n\n10 clicks down, infinity to go! The FOMO is real!\n\n${window.location.origin}\n\n#CRYPTO #FOMO #GettingStarted #Infinity`,
+                `⚡ 10 clicks of pure chaos! ${achievement.icon}\n\nI'm officially a $CRYPTO FOMO degen now!\n\n${window.location.origin}\n\n#CRYPTO #FOMO #Chaos #Degen`
+            ],
+            'fifty-clicks': [
+                `📈 FOMO Rising! 50 clicks achieved! ${achievement.icon}\n\nThe charts only go up from here! 🚀\n\n${window.location.origin}\n\n#CRYPTO #FOMO #Rising #Charts`,
+                `🔥 50 clicks of pure fire! ${achievement.icon}\n\nI'm heating up the $CRYPTO FOMO meter!\n\n${window.location.origin}\n\n#CRYPTO #FOMO #Fire #Heating`
+            ],
+            'hundred-club': [
+                `💯 HUNDRED CLUB MEMBER! ${achievement.icon}\n\n100 clicks of absolute madness achieved!\n\nWelcome to the elite degenerates!\n\n${window.location.origin}\n\n#CRYPTO #FOMO #HundredClub #Elite`,
+                `🎪 Ladies and gentlemen, I present: 100 FOMO clicks! ${achievement.icon}\n\nThe circus is in full swing!\n\n${window.location.origin}\n\n#CRYPTO #FOMO #Circus #FullSwing`,
+                `🏆 Achievement Unlocked: Professional Clicker! ${achievement.icon}\n\n100 clicks = 100% degen status confirmed!\n\n${window.location.origin}\n\n#CRYPTO #FOMO #Professional #Confirmed`
+            ],
+            'five-hundred': [
+                `🤯 FOMO ADDICT STATUS: CONFIRMED! ${achievement.icon}\n\n500 clicks of pure insanity!\n\nI need help... but not really! 😂\n\n${window.location.origin}\n\n#CRYPTO #FOMO #Addict #Insanity`,
+                `💀 500 clicks later... still alive! ${achievement.icon}\n\nThe FOMO addiction is real!\n\n${window.location.origin}\n\n#CRYPTO #FOMO #StillAlive #Addiction`
+            ],
+            'thousand-club': [
+                `👑 THOUSAND CLUB ROYALTY! ${achievement.icon}\n\n1000 clicks = LEGENDARY STATUS!\n\nBow down to the FOMO king/queen! 🙇‍♂️\n\n${window.location.origin}\n\n#CRYPTO #FOMO #Royalty #Legendary`,
+                `🎯 1000 CLICKS OF PURE CHAOS! ${achievement.icon}\n\nI am become degen, destroyer of productivity!\n\n${window.location.origin}\n\n#CRYPTO #FOMO #Chaos #Destroyer`
+            ],
+            'fomo-spreader': [
+                `🌍 FOMO SPREADER ACTIVATED! ${achievement.icon}\n\nSpreading the $CRYPTO madness one tweet at a time!\n\nViral mode: ENGAGED! 🦠\n\n${window.location.origin}\n\n#CRYPTO #FOMO #Spreader #Viral`,
+                `🐦 Tweet tweet! FOMO Spreader unlocked! ${achievement.icon}\n\nHelping the $CRYPTO revolution go viral!\n\n${window.location.origin}\n\n#CRYPTO #FOMO #Tweet #Revolution`,
+                `📡 Broadcasting FOMO to the world! ${achievement.icon}\n\nMission: Spread the $CRYPTO chaos!\n\n${window.location.origin}\n\n#CRYPTO #FOMO #Broadcasting #Mission`
+            ],
+            'degen-streak': [
+                `🔥 7 DAY DEGEN STREAK! ${achievement.icon}\n\nConsistency is key... to madness! 😂\n\nThe FOMO never stops!\n\n${window.location.origin}\n\n#CRYPTO #FOMO #Streak #Consistency`,
+                `⚡ Week-long FOMO addiction confirmed! ${achievement.icon}\n\n7 days of pure degeneracy!\n\n${window.location.origin}\n\n#CRYPTO #FOMO #WeekLong #Degeneracy`
+            ],
+            'mega-streak': [
+                `⚡ MEGA STREAK LEGEND! ${achievement.icon}\n\n30 DAYS of non-stop FOMO!\n\nI am inevitable! 💀\n\n${window.location.origin}\n\n#CRYPTO #FOMO #MegaStreak #Inevitable`,
+                `🏆 30 days of pure dedication! ${achievement.icon}\n\nMega Streak = Mega Degen!\n\n${window.location.origin}\n\n#CRYPTO #FOMO #Dedication #MegaDegen`
+            ],
+            'early-adopter': [
+                `🏆 EARLY ADOPTER ELITE! ${achievement.icon}\n\nTop 1000 users = OG status!\n\nI was here before it was cool! 😎\n\n${window.location.origin}\n\n#CRYPTO #FOMO #EarlyAdopter #OG`,
+                `👑 OG FOMO ROYALTY! ${achievement.icon}\n\nEarly Adopter = Future Legend!\n\n${window.location.origin}\n\n#CRYPTO #FOMO #OG #Legend`
+            ],
+            'speed-demon': [
+                `💨 SPEED DEMON UNLEASHED! ${achievement.icon}\n\n10 clicks in 1 minute = MAXIMUM VELOCITY!\n\nGotta go fast! 🏃‍♂️💨\n\n${window.location.origin}\n\n#CRYPTO #FOMO #SpeedDemon #MaximumVelocity`,
+                `⚡ LIGHTNING FAST FOMO! ${achievement.icon}\n\nSpeed Demon status: ACHIEVED!\n\nFast clicks = Fast gains! 📈\n\n${window.location.origin}\n\n#CRYPTO #FOMO #Lightning #FastGains`
+            ],
+            'night-owl': [
+                `🦉 NIGHT OWL ACTIVATED! ${achievement.icon}\n\n2-4 AM FOMO sessions hit different! 🌙\n\nNocturnal degen mode: ON!\n\n${window.location.origin}\n\n#CRYPTO #FOMO #NightOwl #Nocturnal`,
+                `🌙 Midnight FOMO madness! ${achievement.icon}\n\nNight Owl = Peak degen hours!\n\n${window.location.origin}\n\n#CRYPTO #FOMO #Midnight #Peak`
+            ]
+        };
+
+        // Get random share text for this achievement, or use default
+        const texts = achievementShareTexts[achievementId] || [
+            `🏅 Just unlocked "${achievement.name}" achievement! ${achievement.icon}\n\nJoin the $CRYPTO FOMO party!\n\n${window.location.origin}\n\n#CRYPTO #FOMO #Achievement #Party`
+        ];
+
+        const randomText = texts[Math.floor(Math.random() * texts.length)];
+        const shareText = encodeURIComponent(randomText);
+
+        window.open(`https://twitter.com/intent/tweet?text=${shareText}`, '_blank');
+
+        // Award FOMO spreader achievement
+        try {
+            const response = await fetch(`${this.apiUrl}/user/${this.userId}`);
+            if (response.ok) {
+                const userData = await response.json();
+                const currentAchievements = userData.achievements || [];
+
+                if (!currentAchievements.includes('fomo-spreader')) {
+                    const newAchievements = [...currentAchievements, 'fomo-spreader'];
+                    await this.updateAchievementsInDatabase(newAchievements);
+                    this.showAchievementNotification('fomo-spreader');
+                    this.animateAchievementUnlock('fomo-spreader');
+                }
+            }
+        } catch (error) {
+            console.error("Failed to award FOMO spreader achievement:", error);
+        }
+    }
+
+    async shareFOMOStats() {
+        try {
+            // Get current user stats and global stats
+            const [userResponse, globalResponse] = await Promise.all([
+                fetch(`${this.apiUrl}/user/${this.userId}`),
+                fetch(`${this.apiUrl}/stats`)
+            ]);
+
+            if (userResponse.ok && globalResponse.ok) {
+                const userData = await userResponse.json();
+                const globalStats = await globalResponse.json();
+
+                // Create epic Twitter share text with TONS of variety
+                const shareTexts = [
+                    `🚀 Just pumped the global FOMO meter for $CRYPTO!\n\n💎 My stats:\n• ${userData.totalClicks} clicks\n• Rank #${userData.rank} globally\n• ${userData.streakDays} day streak\n\n🌍 Global FOMO: ${globalStats.totalClicks.toLocaleString()} clicks!\n\nJoin the chaos: ${window.location.origin}\n\n#CRYPTO #FOMO #ToTheMoon #DegenLife`,
+
+                    `🔥 FOMO ALERT! I've clicked ${userData.totalClicks} times on the $CRYPTO FOMO meter!\n\n📈 Currently ranked #${userData.rank} out of thousands of degens!\n\n🎯 Global FOMO level: ${this.fomoLevels[globalStats.currentLevel - 1]?.name || 'MAXIMUM'}\n\nCome pump with us: ${window.location.origin}\n\n#CRYPTO #FOMO #DegensUnite`,
+
+                    `💀 RIP to my productivity! I've clicked the $CRYPTO FOMO button ${userData.totalClicks} times!\n\n🏆 Rank: #${userData.rank}\n🔥 Streak: ${userData.streakDays} days\n🌍 Global clicks: ${globalStats.totalClicks.toLocaleString()}\n\nThis is not financial advice, this is FOMO advice!\n\n${window.location.origin}\n\n#CRYPTO #FOMO #Addicted`,
+
+                    `🤡 Welcome to the circus! I'm degen #${userData.rank} with ${userData.totalClicks} FOMO clicks!\n\n🎪 The global FOMO meter is at ${globalStats.totalClicks.toLocaleString()} clicks and rising!\n\n🚀 Next stop: MOON!\n\nJoin the madness: ${window.location.origin}\n\n#CRYPTO #FOMO #CircusLife #ToTheMoon`,
+
+                    `🦍 APE TOGETHER STRONG! 🦍\n\nI've gone full degen with ${userData.totalClicks} FOMO clicks!\n\n🍌 Rank: #${userData.rank}\n🔥 ${userData.streakDays} day streak\n📊 Global: ${globalStats.totalClicks.toLocaleString()} clicks\n\nWen lambo? WEN NOW!\n\n${window.location.origin}\n\n#CRYPTO #FOMO #ApeArmy #WAGMI`,
+
+                    `⚡ BREAKING: Local degen clicks FOMO button ${userData.totalClicks} times!\n\n📺 More at 11...\n\n🏆 Current rank: #${userData.rank}\n🌍 Global chaos level: ${globalStats.totalClicks.toLocaleString()}\n\nThis just in: MOON MISSION CONFIRMED\n\n${window.location.origin}\n\n#CRYPTO #FOMO #Breaking #News`,
+
+                    `🎮 Achievement Unlocked: Professional Degen!\n\n📊 Stats:\n• Clicks: ${userData.totalClicks}\n• Rank: #${userData.rank}\n• Streak: ${userData.streakDays} days\n• Sanity: 0%\n\n🎯 Join ${globalStats.totalClicks.toLocaleString()} other degenerates!\n\n${window.location.origin}\n\n#CRYPTO #FOMO #Gaming #Degen`,
+
+                    `🍕 Will trade pizza for $CRYPTO!\n\nJust hit ${userData.totalClicks} clicks on the FOMO meter!\n\n🏆 Rank #${userData.rank} in the degen olympics\n🔥 ${userData.streakDays} day addiction streak\n\nSir, this is a Wendy's... NO, this is CRYPTO!\n\n${window.location.origin}\n\n#CRYPTO #FOMO #Pizza #Wendys`,
+
+                    `🧠 Smooth brain = aerodynamic for moon travel! 🌙\n\n🚀 ${userData.totalClicks} clicks and counting!\n📈 Rank: #${userData.rank}\n⚡ Streak: ${userData.streakDays} days\n\n🎪 Join the greatest show on Solana!\nGlobal clicks: ${globalStats.totalClicks.toLocaleString()}\n\n${window.location.origin}\n\n#CRYPTO #FOMO #SmoothBrain #Moon`,
+
+                    `🎭 Plot twist: We're all gonna make it!\n\n💎 My FOMO journey:\n• ${userData.totalClicks} clicks of pure chaos\n• Rank #${userData.rank} among degenerates\n• ${userData.streakDays} days of beautiful madness\n\nTaste the rainbow, HODL the gains! 🌈\n\n${window.location.origin}\n\n#CRYPTO #FOMO #PlotTwist #WAGMI`,
+
+                    `🔮 Crystal ball says: PUMP INCOMING!\n\n⚡ I've clicked ${userData.totalClicks} times!\n🏆 Rank: #${userData.rank}\n🔥 Streak: ${userData.streakDays} days\n🌍 Global: ${globalStats.totalClicks.toLocaleString()}\n\nBeep boop, buying more $CRYPTO! 🤖\n\n${window.location.origin}\n\n#CRYPTO #FOMO #CrystalBall #Pump`,
+
+                    `🎸 Rock and HODL all night! 🎸\n\n🔥 ${userData.totalClicks} clicks of pure rock!\n📊 Rank #${userData.rank} in the hall of fame\n⚡ ${userData.streakDays} day streak of legends\n\nGrab your popcorn, this is entertainment! 🍿\n\n${window.location.origin}\n\n#CRYPTO #FOMO #RockAndRoll #Entertainment`
+                ];
+
+                // Pick a random share text
+                const randomText = shareTexts[Math.floor(Math.random() * shareTexts.length)];
+                const shareText = encodeURIComponent(randomText);
+
+                // Open Twitter with the share text
+                window.open(`https://twitter.com/intent/tweet?text=${shareText}`, '_blank');
+
+                // Award FOMO spreader achievement if not already unlocked
+                const currentAchievements = userData.achievements || [];
+                if (!currentAchievements.includes('fomo-spreader')) {
+                    const newAchievements = [...currentAchievements, 'fomo-spreader'];
+                    await this.updateAchievementsInDatabase(newAchievements);
+                    this.showAchievementNotification('fomo-spreader');
+                    this.animateAchievementUnlock('fomo-spreader');
+                }
+
+                // Add activity to feed
+                this.addActivityItem(`🐦 Someone just shared their FOMO stats on Twitter! Viral mode activated!`);
+
+                // Button animation
+                const button = document.getElementById('fomoShareButton');
+                gsap.to(button, {
+                    scale: 1.1,
+                    duration: 0.2,
+                    yoyo: true,
+                    repeat: 1,
+                    ease: "power2.out"
+                });
+
+            } else {
+                throw new Error('Failed to fetch stats');
+            }
+
+        } catch (error) {
+            console.error("Failed to share FOMO stats:", error);
+
+            // Fallback share text if API fails
+            const fallbackText = encodeURIComponent(
+                `🚀 I'm pumping the global FOMO meter for $CRYPTO!\n\n💎 Join thousands of degens in the ultimate FOMO experience!\n\n🎯 Click to contribute to global chaos!\n\n${window.location.origin}\n\n#CRYPTO #FOMO #ToTheMoon #DegenLife`
+            );
+
+            window.open(`https://twitter.com/intent/tweet?text=${fallbackText}`, '_blank');
+            this.showMessage("📊 Stats unavailable, but FOMO shared anyway! 🚀", 'info');
+        }
+    }
+
+    addMapDot(location) {
+        if (!location) return;
+
+        const mapDots = document.getElementById('mapDots');
+        if (!mapDots) return;
+
+        const dot = document.createElement('div');
+        dot.className = 'map-dot';
+
+        // Convert lat/lng to map coordinates (simplified)
+        const x = ((location.lng + 180) / 360) * 100;
+        const y = ((90 - location.lat) / 180) * 100;
+
+        dot.style.left = Math.max(0, Math.min(100, x)) + '%';
+        dot.style.top = Math.max(0, Math.min(100, y)) + '%';
+
+        mapDots.appendChild(dot);
+
+        // Remove dot after animation
+        setTimeout(() => {
+            if (dot.parentNode) {
+                dot.remove();
+            }
+        }, 4000);
+    }
+
+    populateLeaderboards() {
+        // Global leaderboard
+        const globalLeaderboard = document.getElementById('globalLeaderboard');
+        if (globalLeaderboard) {
+            const topUsers = [
+                { name: 'Anonymous Whale', clicks: 13337 },
+                { name: 'Diamond Hands McGee', clicks: 9999 },
+                { name: 'FOMO Master', clicks: 8888 },
+                { name: 'Degen Supreme', clicks: 7777 },
+                { name: 'Moon Walker', clicks: 6666 }
+            ];
+
+            globalLeaderboard.innerHTML = topUsers.map((user, index) => `
+                <div class="leaderboard-item">
+                    <span class="rank">#${index + 1}</span>
+                    <span class="name">${user.name}</span>
+                    <span class="score">${user.clicks.toLocaleString()} clicks</span>
+                </div>
+            `).join('');
+        }
+
+        // Country leaderboard
+        const countryLeaderboard = document.getElementById('countryLeaderboard');
+        if (countryLeaderboard) {
+            countryLeaderboard.innerHTML = this.countries.map((country, index) => `
+                <div class="leaderboard-item">
+                    <span class="rank">#${index + 1}</span>
+                    <span class="name">${country.name}</span>
+                    <span class="score">${country.clicks.toLocaleString()} clicks</span>
+                </div>
+            `).join('');
+        }
+
+        // Active leaderboard
+        const activeLeaderboard = document.getElementById('activeLeaderboard');
+        if (activeLeaderboard) {
+            activeLeaderboard.innerHTML = this.cities.map((city, index) => `
+                <div class="leaderboard-item">
+                    <span class="rank">#${index + 1}</span>
+                    <span class="name">${city.name}</span>
+                    <span class="score">${city.clicks} clicks/hr</span>
+                </div>
+            `).join('');
+        }
+    }
+
+    getRandomCountry() {
+        const countries = ['🇺🇸', '🇨🇳', '🇮🇳', '🇩🇪', '🇯🇵', '🇬🇧', '🇫🇷', '🇨🇦', '🇦🇺', '🇧🇷'];
+        return countries[Math.floor(Math.random() * countries.length)];
+    }
+
+    addActivityItem(text) {
+        const activityFeed = document.getElementById('activityFeed');
+        if (!activityFeed) return;
+
+        const item = document.createElement('div');
+        item.className = 'activity-item';
+        item.innerHTML = `
+            <span class="activity-time">Just now</span>
+            <span class="activity-text">${text}</span>
+        `;
+
+        activityFeed.insertBefore(item, activityFeed.firstChild);
+
+        // Keep only last 10 items
+        while (activityFeed.children.length > 10) {
+            activityFeed.removeChild(activityFeed.lastChild);
+        }
+    }
+
+    startActivityFeed() {
+        // Add random activity every 10-30 seconds
+        setInterval(() => {
+            const activities = [
+                "💎 Someone just diamond handed through a 50% dip!",
+                "🚀 FOMO level rising in Asia markets!",
+                "🤡 Paper hands detected in sector 7!",
+                "⚡ Lightning fast clicks from Europe!",
+                "🦍 Ape army assembling in the Americas!",
+                "🔥 FOMO meter breaking records!",
+                "🌙 Moon mission progress: 69% complete",
+                "💀 RIP to all the doubters",
+                "🎯 New personal record set by anonymous degen!",
+                "🎪 The circus is in full swing!"
+            ];
+
+            const randomActivity = activities[Math.floor(Math.random() * activities.length)];
+            this.addActivityItem(randomActivity);
+        }, Math.random() * 20000 + 10000); // 10-30 seconds
+    }
+
+    updateLeaderboards(leaderboards) {
+        // Update global leaderboard
+        const globalLeaderboard = document.getElementById('globalLeaderboard');
+        if (globalLeaderboard && leaderboards.globalUsers) {
+            globalLeaderboard.innerHTML = leaderboards.globalUsers.map(user => `
+                <div class="leaderboard-item">
+                    <span class="rank">#${user.rank}</span>
+                    <span class="name">${user.name}</span>
+                    <span class="score">${user.clicks.toLocaleString()} clicks</span>
+                </div>
+            `).join('');
+        }
+
+        // Update country leaderboard
+        const countryLeaderboard = document.getElementById('countryLeaderboard');
+        if (countryLeaderboard && leaderboards.countries) {
+            countryLeaderboard.innerHTML = leaderboards.countries.map(country => `
+                <div class="leaderboard-item">
+                    <span class="rank">#${country.rank}</span>
+                    <span class="name">${country.name}</span>
+                    <span class="score">${country.clicks.toLocaleString()} clicks</span>
+                </div>
+            `).join('');
+        }
+
+        // Update active leaderboard
+        const activeLeaderboard = document.getElementById('activeLeaderboard');
+        if (activeLeaderboard && leaderboards.cities) {
+            activeLeaderboard.innerHTML = leaderboards.cities.map(city => `
+                <div class="leaderboard-item">
+                    <span class="rank">#${city.rank}</span>
+                    <span class="name">${city.name}</span>
+                    <span class="score">${city.clicks} clicks/hr</span>
+                </div>
+            `).join('');
+        }
+    }
+
+    updateAchievementsDisplay(achievements) {
+        this.achievementsList.forEach(achievement => {
+            const achievementEl = document.querySelector(`[data-achievement="${achievement.id}"]`);
+            if (achievementEl) {
+                if (achievements.includes(achievement.id)) {
+                    achievementEl.classList.remove('locked');
+                    achievementEl.classList.add('unlocked');
+                } else {
+                    achievementEl.classList.add('locked');
+                    achievementEl.classList.remove('unlocked');
+                }
+            }
+        });
+    }
+
+    showMessage(message, type = 'info') {
+        const messageEl = document.createElement('div');
+        messageEl.textContent = message;
+        messageEl.style.position = 'fixed';
+        messageEl.style.top = '20px';
+        messageEl.style.left = '50%';
+        messageEl.style.transform = 'translateX(-50%)';
+        messageEl.style.padding = '15px 25px';
+        messageEl.style.borderRadius = '10px';
+        messageEl.style.color = '#fff';
+        messageEl.style.fontWeight = 'bold';
+        messageEl.style.zIndex = '10000';
+        messageEl.style.fontSize = '1.1rem';
+
+        if (type === 'error') {
+            messageEl.style.background = 'linear-gradient(45deg, #ff4444, #cc0000)';
+        } else if (type === 'warning') {
+            messageEl.style.background = 'linear-gradient(45deg, #ffaa00, #ff8800)';
+        } else {
+            messageEl.style.background = 'linear-gradient(45deg, #00ff88, #00cc66)';
+        }
+
+        document.body.appendChild(messageEl);
+
+        gsap.from(messageEl, {
+            y: -50,
+            opacity: 0,
+            duration: 0.5,
+            ease: "back.out(1.7)"
+        });
+
+        setTimeout(() => {
+            gsap.to(messageEl, {
+                y: -50,
+                opacity: 0,
+                duration: 0.3,
+                onComplete: () => messageEl.remove()
+            });
+        }, 3000);
+    }
+
+    startRealTimeUpdates() {
+        // Refresh data periodically
+        setInterval(async () => {
+            try {
+                // Reload global stats
+                const statsResponse = await fetch(`${this.apiUrl}/stats`);
+                if (statsResponse.ok) {
+                    const stats = await statsResponse.json();
+                    this.updateStatsDisplay(stats);
+                }
+
+                // Reload recent clicks for map
+                this.loadRecentClicks();
+
+            } catch (error) {
+                console.error("Failed to update real-time data:", error);
+            }
+        }, 10000); // Every 10 seconds
+
+        // Add random activity messages
+        setInterval(() => {
+            const activities = [
+                "💎 Someone just diamond handed through a 50% dip!",
+                "🚀 FOMO level rising in Asia markets!",
+                "🤡 Paper hands detected in sector 7!",
+                "⚡ Lightning fast clicks from Europe!",
+                "🦍 Ape army assembling in the Americas!",
+                "🔥 FOMO meter breaking records!",
+                "🌙 Moon mission progress: 69% complete",
+                "💀 RIP to all the doubters",
+                "🎯 New personal record set by anonymous degen!",
+                "🎪 The circus is in full swing!"
+            ];
+
+            const randomActivity = activities[Math.floor(Math.random() * activities.length)];
+            this.addActivityItem(randomActivity);
+        }, Math.random() * 20000 + 15000); // 15-35 seconds
+    }
+}
+
+// Initialize the FOMO meter when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    window.fomoMeter = new GlobalFOMOMeter();
+});

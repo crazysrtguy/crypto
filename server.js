@@ -320,6 +320,339 @@ app.get('/api/debug', (req, res) => {
     res.json(debug);
 });
 
+// ===== FOMO METER API ENDPOINTS =====
+
+// Get FOMO stats
+app.get('/api/fomo/stats', async (req, res) => {
+    try {
+        const stats = await prisma.fOMOStats.findUnique({
+            where: { id: 'global' }
+        });
+
+        if (!stats) {
+            // Initialize stats if they don't exist
+            const newStats = await prisma.fOMOStats.create({
+                data: {
+                    id: 'global',
+                    totalClicks: 42069,
+                    currentLevel: 1,
+                    onlineUsers: Math.floor(Math.random() * 1000) + 500
+                }
+            });
+            return res.json(newStats);
+        }
+
+        // Update online users count with some randomness
+        const updatedStats = await prisma.fOMOStats.update({
+            where: { id: 'global' },
+            data: {
+                onlineUsers: Math.floor(Math.random() * 1000) + 500,
+                lastUpdated: new Date()
+            }
+        });
+
+        res.json(updatedStats);
+    } catch (error) {
+        console.error('Error fetching FOMO stats:', error);
+        res.status(500).json({ error: 'Failed to fetch FOMO stats' });
+    }
+});
+
+// Record a FOMO click
+app.post('/api/fomo/click', async (req, res) => {
+    try {
+        const { userId, latitude, longitude, country, city } = req.body;
+        const ipAddress = req.ip || req.connection.remoteAddress;
+        const userAgent = req.get('User-Agent');
+
+        // Rate limiting: max 1 click per second per IP
+        const recentClick = await prisma.fOMOClick.findFirst({
+            where: {
+                ipAddress,
+                timestamp: {
+                    gte: new Date(Date.now() - 1000) // Last 1 second
+                }
+            }
+        });
+
+        if (recentClick) {
+            return res.status(429).json({ error: 'Rate limited: Please wait before clicking again' });
+        }
+
+        // Record the click
+        const click = await prisma.fOMOClick.create({
+            data: {
+                userId,
+                ipAddress,
+                latitude,
+                longitude,
+                country,
+                city,
+                userAgent
+            }
+        });
+
+        // Update global stats
+        const updatedStats = await prisma.fOMOStats.upsert({
+            where: { id: 'global' },
+            update: {
+                totalClicks: { increment: 1 },
+                lastUpdated: new Date()
+            },
+            create: {
+                id: 'global',
+                totalClicks: 42070,
+                currentLevel: 1,
+                onlineUsers: Math.floor(Math.random() * 1000) + 500
+            }
+        });
+
+        // Update or create user stats
+        if (userId) {
+            const today = new Date().toDateString();
+            const user = await prisma.fOMOUser.findUnique({
+                where: { userId }
+            });
+
+            if (user) {
+                const lastClickDate = user.lastClickDate ? user.lastClickDate.toDateString() : null;
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayString = yesterday.toDateString();
+
+                let newStreakDays = user.streakDays;
+                if (lastClickDate !== today) {
+                    if (lastClickDate === yesterdayString) {
+                        newStreakDays++;
+                    } else {
+                        newStreakDays = 1;
+                    }
+                }
+
+                await prisma.fOMOUser.update({
+                    where: { userId },
+                    data: {
+                        totalClicks: { increment: 1 },
+                        lastClickDate: new Date(),
+                        streakDays: newStreakDays,
+                        country: country || user.country,
+                        city: city || user.city
+                    }
+                });
+            } else {
+                await prisma.fOMOUser.create({
+                    data: {
+                        userId,
+                        totalClicks: 1,
+                        lastClickDate: new Date(),
+                        streakDays: 1,
+                        country,
+                        city
+                    }
+                });
+            }
+        }
+
+        // Update leaderboards asynchronously
+        updateLeaderboards(userId, country, city);
+
+        res.json({
+            success: true,
+            globalStats: updatedStats,
+            clickId: click.id
+        });
+    } catch (error) {
+        console.error('Error recording FOMO click:', error);
+        res.status(500).json({ error: 'Failed to record click' });
+    }
+});
+
+// Get user stats
+app.get('/api/fomo/user/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const user = await prisma.fOMOUser.findUnique({
+            where: { userId }
+        });
+
+        if (!user) {
+            return res.json({
+                totalClicks: 0,
+                streakDays: 0,
+                achievements: [],
+                rank: 999999
+            });
+        }
+
+        // Calculate rank
+        const rank = await prisma.fOMOUser.count({
+            where: {
+                totalClicks: { gt: user.totalClicks }
+            }
+        }) + 1;
+
+        res.json({
+            ...user,
+            rank
+        });
+    } catch (error) {
+        console.error('Error fetching user stats:', error);
+        res.status(500).json({ error: 'Failed to fetch user stats' });
+    }
+});
+
+// Get recent clicks for map
+app.get('/api/fomo/recent-clicks', async (req, res) => {
+    try {
+        const recentClicks = await prisma.fOMOClick.findMany({
+            where: {
+                latitude: { not: null },
+                longitude: { not: null },
+                timestamp: {
+                    gte: new Date(Date.now() - 5 * 60 * 1000) // Last 5 minutes
+                }
+            },
+            select: {
+                latitude: true,
+                longitude: true,
+                country: true,
+                city: true,
+                timestamp: true
+            },
+            orderBy: { timestamp: 'desc' },
+            take: 100
+        });
+
+        res.json(recentClicks);
+    } catch (error) {
+        console.error('Error fetching recent clicks:', error);
+        res.status(500).json({ error: 'Failed to fetch recent clicks' });
+    }
+});
+
+// Get leaderboards
+app.get('/api/fomo/leaderboards', async (req, res) => {
+    try {
+        const [globalUsers, countries, cities] = await Promise.all([
+            // Top global users
+            prisma.fOMOUser.findMany({
+                orderBy: { totalClicks: 'desc' },
+                take: 10,
+                select: {
+                    userId: true,
+                    totalClicks: true,
+                    country: true,
+                    city: true
+                }
+            }),
+
+            // Top countries
+            prisma.fOMOLeaderboard.findMany({
+                where: { type: 'country' },
+                orderBy: { clicks: 'desc' },
+                take: 10
+            }),
+
+            // Top cities
+            prisma.fOMOLeaderboard.findMany({
+                where: { type: 'city' },
+                orderBy: { clicks: 'desc' },
+                take: 10
+            })
+        ]);
+
+        res.json({
+            globalUsers: globalUsers.map((user, index) => ({
+                rank: index + 1,
+                name: `Anonymous Degen #${user.userId.slice(-4)}`,
+                clicks: user.totalClicks,
+                location: user.city && user.country ? `${user.city}, ${user.country}` : user.country || 'Unknown'
+            })),
+            countries: countries.map((country, index) => ({
+                rank: index + 1,
+                name: country.name,
+                clicks: country.clicks
+            })),
+            cities: cities.map((city, index) => ({
+                rank: index + 1,
+                name: city.name,
+                clicks: city.clicks
+            }))
+        });
+    } catch (error) {
+        console.error('Error fetching leaderboards:', error);
+        res.status(500).json({ error: 'Failed to fetch leaderboards' });
+    }
+});
+
+// Update user achievements
+app.post('/api/fomo/achievements', async (req, res) => {
+    try {
+        const { userId, achievements } = req.body;
+
+        if (!userId || !Array.isArray(achievements)) {
+            return res.status(400).json({ error: 'Invalid request data' });
+        }
+
+        const user = await prisma.fOMOUser.upsert({
+            where: { userId },
+            update: { achievements },
+            create: {
+                userId,
+                achievements,
+                totalClicks: 0
+            }
+        });
+
+        res.json({ success: true, achievements: user.achievements });
+    } catch (error) {
+        console.error('Error updating achievements:', error);
+        res.status(500).json({ error: 'Failed to update achievements' });
+    }
+});
+
+// Helper function to update leaderboards
+async function updateLeaderboards(userId, country, city) {
+    try {
+        // Update country leaderboard
+        if (country) {
+            await prisma.fOMOLeaderboard.upsert({
+                where: { type_identifier: { type: 'country', identifier: country } },
+                update: {
+                    clicks: { increment: 1 },
+                    lastUpdated: new Date()
+                },
+                create: {
+                    type: 'country',
+                    name: country,
+                    identifier: country,
+                    clicks: 1
+                }
+            });
+        }
+
+        // Update city leaderboard
+        if (city) {
+            await prisma.fOMOLeaderboard.upsert({
+                where: { type_identifier: { type: 'city', identifier: city } },
+                update: {
+                    clicks: { increment: 1 },
+                    lastUpdated: new Date()
+                },
+                create: {
+                    type: 'city',
+                    name: city,
+                    identifier: city,
+                    clicks: 1
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error updating leaderboards:', error);
+    }
+}
+
 // Helper function to update meme stats
 async function updateMemeStats() {
     try {

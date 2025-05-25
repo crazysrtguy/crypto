@@ -194,9 +194,9 @@ body {
 }
 
 .buy-button {
-    background: linear-gradient(45deg, #ff4081, #3f51b5);
+    background: linear-gradient(45deg, #ff6b4a, #4ecdc4);
     color: white;
-    border: none;
+    border: 2px solid #fff;
     padding: 20px 40px;
     font-size: 1.5rem;
     font-weight: bold;
@@ -207,11 +207,19 @@ body {
     text-decoration: none;
     display: inline-block;
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+    position: relative;
+    overflow: hidden;
 }
 
 .buy-button:hover {
-    transform: scale(1.1) rotate(5deg);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    transform: scale(1.1) rotate(3deg);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    background: linear-gradient(45deg, #4ecdc4, #ff6b4a);
+}
+
+.buy-button:active {
+    transform: scale(0.95);
 }
 
 .playground {
@@ -228,8 +236,15 @@ body {
     padding: 20px;
     margin: 15px 0;
     border-radius: 15px;
-    border-left: 5px solid #ff4081;
+    border-left: 5px solid #ff6b4a;
     animation: slideIn 0.5s ease;
+    transition: all 0.3s ease;
+}
+
+.roadmap-item:hover {
+    transform: translateX(5px);
+    border-left-color: #4ecdc4;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
 }
 
 @keyframes slideIn {
@@ -339,6 +354,526 @@ body {
     100% { box-shadow: 0 0 20px #ff0000, 0 0 30px #ff0000; }
 }
 
+/* FOMO Meter Styles */
+.fomo-meter-container {
+    background: linear-gradient(135deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+    border-radius: 20px;
+    padding: 30px;
+    margin: 30px 0;
+    border: 3px solid #fff;
+    box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+    animation: fomoGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes fomoGlow {
+    0% { box-shadow: 0 0 30px rgba(255, 255, 255, 0.3); }
+    100% { box-shadow: 0 0 50px rgba(255, 255, 255, 0.6); }
+}
+
+.fomo-meter {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    align-items: center;
+}
+
+.fomo-thermometer {
+    position: relative;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 15px;
+    padding: 20px;
+    height: 300px;
+    border: 2px solid #00ff00;
+}
+
+.fomo-fill {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    background: linear-gradient(to top, #00ff00, #ffff00, #ff6600, #ff0000);
+    border-radius: 10px;
+    height: 0%;
+    transition: height 0.3s ease, transform 0.15s ease;
+    animation: fomoFillPulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes fomoFillPulse {
+    0% { opacity: 0.8; }
+    100% { opacity: 1; }
+}
+
+.fomo-levels {
+    position: absolute;
+    right: -150px;
+    top: 20px;
+    bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.fomo-level {
+    background: rgba(0, 0, 0, 0.9);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    border: 1px solid #333;
+    transition: all 0.3s ease;
+}
+
+.fomo-level.active {
+    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+    border-color: #fff;
+    transform: scale(1.1);
+    animation: levelActive 1s ease-in-out infinite alternate;
+}
+
+@keyframes levelActive {
+    0% { box-shadow: 0 0 10px rgba(255, 255, 255, 0.5); }
+    100% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.8); }
+}
+
+.fomo-stats {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+.fomo-stat {
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    border: 2px solid #00ff00;
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: #00ff00;
+    text-shadow: 0 0 10px #00ff00;
+    animation: statGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes statGlow {
+    0% { text-shadow: 0 0 10px #00ff00; }
+    100% { text-shadow: 0 0 20px #00ff00, 0 0 30px #00ff00; }
+}
+
+.stat-label {
+    color: #fff;
+    font-size: 1rem;
+    margin-top: 10px;
+}
+
+.fomo-button-container {
+    text-align: center;
+    margin: 30px 0;
+}
+
+.fomo-button {
+    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+    border: none;
+    border-radius: 50px;
+    padding: 20px 40px;
+    font-size: 2rem;
+    font-weight: bold;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.fomo-button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+}
+
+.fomo-button:active {
+    transform: scale(0.95);
+}
+
+.fomo-button-text {
+    position: relative;
+    z-index: 2;
+}
+
+.fomo-button-emoji {
+    font-size: 2.5rem;
+    margin-left: 10px;
+    animation: rocketSpin 2s linear infinite;
+}
+
+@keyframes rocketSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.fomo-button-stats {
+    margin-top: 15px;
+    color: #fff;
+    font-size: 1.1rem;
+}
+
+.fomo-share-container {
+    margin-top: 20px;
+}
+
+.fomo-share-button {
+    background: linear-gradient(45deg, #1da1f2, #4ecdc4);
+    border: 2px solid #fff;
+    border-radius: 25px;
+    padding: 12px 25px;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(29, 161, 242, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 auto;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+}
+
+.fomo-share-button:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 8px 25px rgba(29, 161, 242, 0.4);
+    background: linear-gradient(45deg, #4ecdc4, #1da1f2);
+}
+
+.fomo-share-button:active {
+    transform: translateY(0);
+}
+
+.share-icon {
+    font-size: 1.2rem;
+    animation: twitterBounce 2s ease-in-out infinite;
+}
+
+@keyframes twitterBounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+}
+
+.share-text {
+    font-size: 0.95rem;
+}
+
+/* World Map Styles */
+.world-map-container {
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 15px;
+    padding: 25px;
+    margin: 30px 0;
+    border: 2px solid #00ff00;
+}
+
+.world-map-container h3 {
+    color: #fff;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.world-map {
+    background: #001122;
+    border-radius: 10px;
+    height: 300px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #333;
+}
+
+.map-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #666;
+    font-size: 1.2rem;
+}
+
+.map-dots {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.map-dot {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #ff6b6b;
+    border-radius: 50%;
+    animation: mapDotPulse 2s ease-in-out infinite;
+}
+
+.map-legend {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff;
+    font-size: 0.9rem;
+}
+
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+}
+
+.legend-dot.recent {
+    background: #ff6b6b;
+    animation: mapDotPulse 2s ease-in-out infinite;
+}
+
+.legend-dot.older {
+    background: #4ecdc4;
+    opacity: 0.7;
+}
+
+@keyframes mapDotPulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(2); opacity: 0.7; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Leaderboards Styles */
+.leaderboards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin: 30px 0;
+}
+
+.leaderboard {
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 15px;
+    padding: 20px;
+    border: 2px solid #00ff00;
+}
+
+.leaderboard h3 {
+    color: #fff;
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+}
+
+.leaderboard-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.leaderboard-item {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    display: grid;
+    grid-template-columns: 40px 1fr auto;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+}
+
+.leaderboard-item:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateX(5px);
+}
+
+.leaderboard-item .rank {
+    color: #ffff00;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.leaderboard-item .name {
+    color: #fff;
+    font-size: 1rem;
+}
+
+.leaderboard-item .score {
+    color: #00ff00;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+/* Achievements Styles */
+.achievements-container {
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 15px;
+    padding: 25px;
+    margin: 30px 0;
+    border: 2px solid #00ff00;
+}
+
+.achievements-container h3 {
+    color: #fff;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.achievement {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+    border: 2px solid #333;
+    transition: all 0.3s ease;
+}
+
+.achievement.unlocked {
+    background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+    border-color: #fff;
+    animation: achievementGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes achievementGlow {
+    0% { box-shadow: 0 0 10px rgba(255, 255, 255, 0.3); }
+    100% { box-shadow: 0 0 20px rgba(255, 255, 255, 0.6); }
+}
+
+.achievement.locked {
+    opacity: 0.5;
+    filter: grayscale(100%);
+}
+
+.achievement-icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.achievement-name {
+    color: #fff;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.achievement-desc {
+    color: #ccc;
+    font-size: 0.9rem;
+}
+
+/* Activity Feed Styles */
+.activity-feed-container {
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 15px;
+    padding: 25px;
+    margin: 30px 0;
+    border: 2px solid #00ff00;
+}
+
+.activity-feed-container h3 {
+    color: #fff;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.activity-feed {
+    max-height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.activity-item {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 10px;
+    border-left: 3px solid #00ff00;
+    animation: activitySlideIn 0.5s ease;
+}
+
+@keyframes activitySlideIn {
+    0% { transform: translateX(-100%); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+}
+
+.activity-time {
+    color: #888;
+    font-size: 0.8rem;
+    margin-right: 10px;
+}
+
+.activity-text {
+    color: #fff;
+    font-size: 0.9rem;
+}
+
+/* FOMO Level Effects */
+.fomo-level-1 {
+    /* Mild Interest - minimal effects */
+    opacity: 1;
+}
+
+.fomo-level-2 {
+    /* Getting Excited - some animations */
+    animation: gentleShake 3s ease-in-out infinite;
+}
+
+@keyframes gentleShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-2px); }
+    75% { transform: translateX(2px); }
+}
+
+.fomo-level-3 {
+    /* Maximum FOMO - more intense effects */
+    animation: mediumShake 2s ease-in-out infinite;
+    filter: hue-rotate(45deg);
+}
+
+@keyframes mediumShake {
+    0%, 100% { transform: translateX(0) translateY(0); }
+    25% { transform: translateX(-5px) translateY(-2px); }
+    75% { transform: translateX(5px) translateY(2px); }
+}
+
+.fomo-level-4 {
+    /* Absolutely Unhinged - chaos mode */
+    animation: crazyShake 1s ease-in-out infinite, colorCycle 3s linear infinite;
+}
+
+@keyframes crazyShake {
+    0%, 100% { transform: translateX(0) translateY(0) rotate(0deg); }
+    25% { transform: translateX(-10px) translateY(-5px) rotate(-2deg); }
+    50% { transform: translateX(10px) translateY(5px) rotate(2deg); }
+    75% { transform: translateX(-5px) translateY(10px) rotate(-1deg); }
+}
+
+@keyframes colorCycle {
+    0% { filter: hue-rotate(0deg) saturate(150%); }
+    33% { filter: hue-rotate(120deg) saturate(200%); }
+    66% { filter: hue-rotate(240deg) saturate(150%); }
+    100% { filter: hue-rotate(360deg) saturate(100%); }
+}
+
 @media (max-width: 768px) {
     .logo {
         font-size: 3rem;
@@ -367,5 +902,36 @@ body {
 
     .video-overlay p {
         font-size: 1.2rem;
+    }
+
+    /* FOMO Meter Mobile Styles */
+    .fomo-meter {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .fomo-levels {
+        position: static;
+        flex-direction: row;
+        justify-content: space-around;
+        margin-top: 15px;
+    }
+
+    .fomo-level {
+        font-size: 0.8rem;
+        padding: 6px 8px;
+    }
+
+    .fomo-button {
+        font-size: 1.5rem;
+        padding: 15px 30px;
+    }
+
+    .leaderboards-container {
+        grid-template-columns: 1fr;
+    }
+
+    .achievements-grid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     }
 }

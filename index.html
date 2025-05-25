@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>$CRYPTO - Crackhead Reckless Yeet Playground Token Only</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- Leaflet CSS and JS for interactive maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="./styles.css">
     <!-- Fallback CSS loading for deployment -->
@@ -63,6 +66,191 @@
             <p><strong>"Why should dogs and cats have all the fun when CRYPTO itself deserves the crown?"</strong></p>
             <p>This is the people's token. The community's token. The token that represents EVERY degen who's ever screamed "TO THE MOON!" at 3AM while watching charts. We're building the strongest diamond-handed army in crypto history! 💪</p>
             <p>Our mission is simple: Make $CRYPTO THE definitive ticker that represents the entire crypto movement. No more, no less. Pure. Legendary. Inevitable. 👑</p>
+        </div>
+
+        <!-- Global FOMO Meter Section -->
+        <div class="section">
+            <h2>🎯 Global FOMO Meter (Pump The Hype!)</h2>
+            <p style="text-align: center; margin-bottom: 30px;">Join degens worldwide in pumping the global FOMO! Every click counts! 🌍🔥</p>
+
+            <!-- Main FOMO Meter -->
+            <div class="fomo-meter-container">
+                <div class="fomo-meter">
+                    <div class="fomo-thermometer">
+                        <div class="fomo-fill" id="fomoFill"></div>
+                        <div class="fomo-levels">
+                            <div class="fomo-level" data-level="1">😐 Mild Interest</div>
+                            <div class="fomo-level" data-level="2">😮 Getting Excited</div>
+                            <div class="fomo-level" data-level="3">🤯 MAXIMUM FOMO</div>
+                            <div class="fomo-level" data-level="4">🚀 ABSOLUTELY UNHINGED</div>
+                        </div>
+                    </div>
+                    <div class="fomo-stats">
+                        <div class="fomo-stat">
+                            <div class="stat-number" id="globalClicks">0</div>
+                            <div class="stat-label">Global Clicks</div>
+                        </div>
+                        <div class="fomo-stat">
+                            <div class="stat-number" id="currentLevel">Mild Interest</div>
+                            <div class="stat-label">FOMO Level</div>
+                        </div>
+                        <div class="fomo-stat">
+                            <div class="stat-number" id="onlineUsers">1</div>
+                            <div class="stat-label">Degens Online</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Giant FOMO Button -->
+                <div class="fomo-button-container">
+                    <button class="fomo-button" id="fomoButton">
+                        <span class="fomo-button-text">PUMP THE FOMO!</span>
+                        <span class="fomo-button-emoji">🚀</span>
+                    </button>
+                    <div class="fomo-button-stats">
+                        <span id="userClicks">Your clicks: 0</span> |
+                        <span id="userRank">Rank: #∞</span>
+                    </div>
+                    <div class="fomo-share-container">
+                        <button class="fomo-share-button" id="fomoShareButton">
+                            <span class="share-icon">🐦</span>
+                            <span class="share-text">Share Your FOMO Power!</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- World Map -->
+            <div class="world-map-container">
+                <h3>🌍 Live FOMO Activity Map</h3>
+                <div class="world-map" id="worldMap">
+                    <!-- Leaflet map will be initialized here -->
+                </div>
+                <div class="map-legend">
+                    <div class="legend-item">
+                        <div class="legend-dot recent"></div>
+                        <span>Recent clicks (last 5 min)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-dot older"></div>
+                        <span>Older activity</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Leaderboards -->
+            <div class="leaderboards-container">
+                <div class="leaderboard">
+                    <h3>🏆 Top FOMO Producers</h3>
+                    <div class="leaderboard-list" id="globalLeaderboard">
+                        <div class="leaderboard-item">
+                            <span class="rank">#1</span>
+                            <span class="name">Anonymous Degen</span>
+                            <span class="score">1,337 clicks</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="leaderboard">
+                    <h3>🌍 Top Countries</h3>
+                    <div class="leaderboard-list" id="countryLeaderboard">
+                        <div class="leaderboard-item">
+                            <span class="rank">#1</span>
+                            <span class="name">🇺🇸 United States</span>
+                            <span class="score">42,069 clicks</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="leaderboard">
+                    <h3>⚡ Most Active Now</h3>
+                    <div class="leaderboard-list" id="activeLeaderboard">
+                        <div class="leaderboard-item">
+                            <span class="rank">#1</span>
+                            <span class="name">🔥 Degen City</span>
+                            <span class="score">420 clicks/hr</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Achievements -->
+            <div class="achievements-container">
+                <h3>🏅 Your Achievements</h3>
+                <div class="achievements-grid" id="achievementsGrid">
+                    <div class="achievement locked" data-achievement="first-click">
+                        <div class="achievement-icon">🎯</div>
+                        <div class="achievement-name">First Click</div>
+                        <div class="achievement-desc">Click the FOMO button</div>
+                    </div>
+                    <div class="achievement locked" data-achievement="ten-clicks">
+                        <div class="achievement-icon">🚀</div>
+                        <div class="achievement-name">Getting Started</div>
+                        <div class="achievement-desc">10 clicks</div>
+                    </div>
+                    <div class="achievement locked" data-achievement="fifty-clicks">
+                        <div class="achievement-icon">📈</div>
+                        <div class="achievement-name">FOMO Rising</div>
+                        <div class="achievement-desc">50 clicks</div>
+                    </div>
+                    <div class="achievement locked" data-achievement="hundred-club">
+                        <div class="achievement-icon">💯</div>
+                        <div class="achievement-name">Hundred Club</div>
+                        <div class="achievement-desc">100 clicks</div>
+                    </div>
+                    <div class="achievement locked" data-achievement="five-hundred">
+                        <div class="achievement-icon">🤯</div>
+                        <div class="achievement-name">FOMO Addict</div>
+                        <div class="achievement-desc">500 clicks</div>
+                    </div>
+                    <div class="achievement locked" data-achievement="thousand-club">
+                        <div class="achievement-icon">👑</div>
+                        <div class="achievement-name">Thousand Club</div>
+                        <div class="achievement-desc">1000 clicks</div>
+                    </div>
+                    <div class="achievement locked" data-achievement="fomo-spreader">
+                        <div class="achievement-icon">🌍</div>
+                        <div class="achievement-name">FOMO Spreader</div>
+                        <div class="achievement-desc">Share on Twitter</div>
+                    </div>
+                    <div class="achievement locked" data-achievement="degen-streak">
+                        <div class="achievement-icon">🔥</div>
+                        <div class="achievement-name">Degen Streak</div>
+                        <div class="achievement-desc">7 days in a row</div>
+                    </div>
+                    <div class="achievement locked" data-achievement="mega-streak">
+                        <div class="achievement-icon">⚡</div>
+                        <div class="achievement-name">Mega Streak</div>
+                        <div class="achievement-desc">30 days in a row</div>
+                    </div>
+                    <div class="achievement locked" data-achievement="early-adopter">
+                        <div class="achievement-icon">🏆</div>
+                        <div class="achievement-name">Early Adopter</div>
+                        <div class="achievement-desc">Top 1000 users</div>
+                    </div>
+                    <div class="achievement locked" data-achievement="speed-demon">
+                        <div class="achievement-icon">💨</div>
+                        <div class="achievement-name">Speed Demon</div>
+                        <div class="achievement-desc">10 clicks in 1 minute</div>
+                    </div>
+                    <div class="achievement locked" data-achievement="night-owl">
+                        <div class="achievement-icon">🦉</div>
+                        <div class="achievement-name">Night Owl</div>
+                        <div class="achievement-desc">Click between 2-4 AM</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Activity Feed -->
+            <div class="activity-feed-container">
+                <h3>📡 Live FOMO Feed</h3>
+                <div class="activity-feed" id="activityFeed">
+                    <div class="activity-item">
+                        <span class="activity-time">Just now</span>
+                        <span class="activity-text">🚀 Anonymous degen from 🇺🇸 pumped the FOMO!</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Playground Section -->

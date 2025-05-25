@@ -27,6 +27,58 @@ model Meme {
   @@map("memes")
 }
 
+model FOMOClick {
+  id          String   @id @default(cuid())
+  userId      String?  // Anonymous user identifier
+  ipAddress   String?  // For rate limiting
+  latitude    Float?
+  longitude   Float?
+  country     String?
+  city        String?
+  userAgent   String?
+  timestamp   DateTime @default(now())
+
+  @@map("fomo_clicks")
+}
+
+model FOMOStats {
+  id              String   @id @default("global")
+  totalClicks     Int      @default(0)
+  currentLevel    Int      @default(1)
+  onlineUsers     Int      @default(0)
+  lastUpdated     DateTime @default(now())
+
+  @@map("fomo_stats")
+}
+
+model FOMOUser {
+  id              String   @id @default(cuid())
+  userId          String   @unique // Anonymous user identifier
+  totalClicks     Int      @default(0)
+  lastClickDate   DateTime?
+  streakDays      Int      @default(0)
+  achievements    String[] @default([]) // JSON array of achievement IDs
+  country         String?
+  city            String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("fomo_users")
+}
+
+model FOMOLeaderboard {
+  id          String   @id @default(cuid())
+  type        String   // 'user', 'country', 'city'
+  name        String
+  identifier  String   // userId, country code, city name
+  clicks      Int      @default(0)
+  rank        Int      @default(0)
+  lastUpdated DateTime @default(now())
+
+  @@unique([type, identifier])
+  @@map("fomo_leaderboard")
+}
+
 model MemeStats {
   id          String   @id @default(cuid())
   totalMemes  Int      @default(0)

@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One:wght@400&family=Nunito:wght@400;700;800;900&display=swap');
+
 * {
     margin: 0;
     padding: 0;
@@ -5,7 +7,7 @@
 }
 
 body {
-    font-family: 'Comic Sans MS', cursive;
+    font-family: 'Fredoka One', 'Comic Sans MS', 'Chalkboard SE', 'Bradley Hand', 'Brush Script MT', fantasy, sans-serif;
     background: linear-gradient(45deg, #ff0080, #0080ff, #80ff00, #ff8000);
     background-size: 400% 400%;
     animation: rainbowBg 3s ease infinite;
@@ -322,7 +324,7 @@ body {
     background: rgba(0,0,0,0.8);
     color: #00ff00;
     padding: 10px;
-    font-family: monospace;
+    font-family: 'Courier New', Courier, monospace;
     white-space: nowrap;
     overflow: hidden;
 }

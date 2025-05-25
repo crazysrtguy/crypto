@@ -38,6 +38,8 @@ model FOMOClick {
   userAgent   String?
   timestamp   DateTime @default(now())
 
+  @@index([ipAddress, timestamp]) // Optimize rate limiting queries
+  @@index([timestamp]) // Optimize recent clicks queries
   @@map("fomo_clicks")
 }
 

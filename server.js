@@ -365,12 +365,12 @@ app.post('/api/fomo/click', async (req, res) => {
         const ipAddress = req.ip || req.connection.remoteAddress;
         const userAgent = req.get('User-Agent');
 
-        // Rate limiting: max 1 click per second per IP
+        // Rate limiting: max 1 click per 100ms per IP (much more lenient)
         const recentClick = await prisma.fOMOClick.findFirst({
             where: {
                 ipAddress,
                 timestamp: {
-                    gte: new Date(Date.now() - 1000) // Last 1 second
+                    gte: new Date(Date.now() - 100) // Last 100ms only
                 }
             }
         });
@@ -453,8 +453,12 @@ app.post('/api/fomo/click', async (req, res) => {
             }
         }
 
-        // Update leaderboards asynchronously
-        updateLeaderboards(userId, country, city);
+        // Update leaderboards asynchronously (don't wait for completion)
+        setImmediate(() => {
+            updateLeaderboards(userId, country, city).catch(error => {
+                console.error('Error updating leaderboards:', error);
+            });
+        });
 
         res.json({
             success: true,

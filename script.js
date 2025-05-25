@@ -3494,11 +3494,8 @@ class GlobalFOMOMeter {
     }
 
     async handleFOMOClick() {
-        // Much more lenient rate limiting - allow fast clicks!
+        // Remove client-side rate limiting for maximum responsiveness!
         const now = Date.now();
-        if (now - this.lastClickTime < 200) { // Only 200ms instead of 1000ms
-            return; // Just ignore, don't show annoying message
-        }
 
         // Track clicks for speed demon achievement
         this.recentClicks.push(now);
@@ -3514,11 +3511,11 @@ class GlobalFOMOMeter {
             // Visual effects first for immediate feedback
             this.createClickEffect();
 
-            // Button animation
+            // Faster, more responsive button animation
             const button = document.getElementById('fomoButton');
             gsap.to(button, {
-                scale: 1.2,
-                duration: 0.1,
+                scale: 1.15,
+                duration: 0.05,
                 yoyo: true,
                 repeat: 1,
                 ease: "power2.out"
@@ -3553,10 +3550,14 @@ class GlobalFOMOMeter {
                     this.addMapMarker(this.userLocation.lat, this.userLocation.lng, true);
                 }
 
-                // Reload user stats and leaderboards
-                this.loadUserStats();
-                this.loadLeaderboards();
-                this.loadRecentClicks();
+                // Reload user stats and leaderboards (batched for better performance)
+                Promise.all([
+                    this.loadUserStats(),
+                    this.loadLeaderboards(),
+                    this.loadRecentClicks()
+                ]).catch(error => {
+                    console.error('Error reloading data:', error);
+                });
 
                 // Check for achievements after successful click
                 this.checkAndAwardAchievements();
@@ -3569,14 +3570,16 @@ class GlobalFOMOMeter {
 
                 console.log(`🎯 FOMO PUMPED! Response:`, result);
             } else if (response.status === 429) {
-                this.showMessage("🚫 Rate limited! Please wait before clicking again.", 'error');
+                // Rate limited - just log it, don't show annoying message
+                console.log("🚫 Rate limited, but visual feedback already provided");
             } else {
                 throw new Error(`HTTP ${response.status}`);
             }
 
         } catch (error) {
             console.error("Failed to record FOMO click:", error);
-            this.showMessage("❌ Failed to record click, but your FOMO is still valid!", 'error');
+            // Don't show error message - user already got visual feedback
+            // Just log it and continue
         }
     }
 

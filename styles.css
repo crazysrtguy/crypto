@@ -482,19 +482,21 @@ body {
     font-weight: bold;
     color: #fff;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.1s ease; /* Much faster transition for responsiveness */
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     position: relative;
     overflow: hidden;
+    user-select: none; /* Prevent text selection on rapid clicks */
 }
 
 .fomo-button:hover {
-    transform: scale(1.1);
+    transform: scale(1.05); /* Slightly less hover effect for faster feel */
     box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
 }
 
 .fomo-button:active {
-    transform: scale(0.95);
+    transform: scale(0.98); /* Less dramatic active state for faster recovery */
+    transition: all 0.05s ease; /* Even faster active transition */
 }
 
 .fomo-button-text {

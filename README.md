@@ -6,7 +6,7 @@ AI-powered meme generator with Prisma database and Twitter sharing capabilities.
 
 - 🎨 AI-powered meme generation
 - 📚 Persistent meme database with Prisma 
-- 🐦 Enhanced Twitter sharing with image upload
+- 🐦 Enhanced Twitter sharing with image upload 
 - 💾 Reliable meme downloads
 - 📊 Meme statistics and analytics
 - 🗑️ Meme management (delete, view all)

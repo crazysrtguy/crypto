@@ -158,6 +158,8 @@
   "scripts": {
     "dev": "node server.js",
     "start": "node server.js",
+    "build": "prisma generate",
+    "postinstall": "prisma generate",
     "frontend": "live-server --port=3000 --open=/index.html",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",

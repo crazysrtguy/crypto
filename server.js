@@ -135,23 +135,7 @@ app.post('/api/memes', async (req, res) => {
     }
 });
 
-// Delete a meme
-app.delete('/api/memes/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
 
-        await prisma.meme.delete({
-            where: { id }
-        });
-
-        await updateMemeStats();
-
-        res.json({ message: 'Meme deleted successfully' });
-    } catch (error) {
-        console.error('Error deleting meme:', error);
-        res.status(500).json({ error: 'Failed to delete meme' });
-    }
-});
 
 // Upload to IPFS via Pinata (simplified approach)
 app.post('/api/upload-to-ipfs', upload.single('file'), async (req, res) => {

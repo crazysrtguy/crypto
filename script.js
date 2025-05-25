@@ -106,175 +106,9 @@ document.querySelectorAll('.playground-char').forEach(char => {
     });
 });
 
-// Chaos Generator Functions
-function makeItRain() {
-    const chaosZone = document.getElementById('chaosZone');
-    const moneyEmojis = ['💵', '💰', '💸', '🤑', '💎', '🚀'];
 
-    for (let i = 0; i < 50; i++) {
-        const money = document.createElement('div');
-        money.innerHTML = moneyEmojis[Math.floor(Math.random() * moneyEmojis.length)];
-        money.style.position = 'absolute';
-        money.style.fontSize = '2rem';
-        money.style.left = Math.random() * 100 + '%';
-        money.style.top = '-50px';
-        money.style.pointerEvents = 'none';
-        chaosZone.appendChild(money);
 
-        gsap.to(money, {
-            y: 250,
-            rotation: 360,
-            duration: Math.random() * 2 + 1,
-            ease: "bounce.out",
-            onComplete: () => money.remove()
-        });
-    }
-}
 
-function summonPepe() {
-    const chaosZone = document.getElementById('chaosZone');
-    const pepes = ['🐸', '🤡', '👹', '🦍', '🤖'];
-
-    for (let i = 0; i < 10; i++) {
-        const pepe = document.createElement('div');
-        pepe.innerHTML = pepes[Math.floor(Math.random() * pepes.length)];
-        pepe.style.position = 'absolute';
-        pepe.style.fontSize = '3rem';
-        pepe.style.left = Math.random() * 80 + '%';
-        pepe.style.top = Math.random() * 80 + '%';
-        pepe.style.cursor = 'pointer';
-        chaosZone.appendChild(pepe);
-
-        pepe.addEventListener('click', function() {
-            gsap.to(pepe, {
-                scale: 0,
-                rotation: 720,
-                duration: 0.5,
-                onComplete: () => pepe.remove()
-            });
-        });
-
-        gsap.from(pepe, { scale: 0, rotation: 360, duration: 0.5, ease: "back.out(1.7)" });
-
-        setTimeout(() => {
-            if (pepe.parentNode) {
-                gsap.to(pepe, { opacity: 0, duration: 0.5, onComplete: () => pepe.remove() });
-            }
-        }, 10000);
-    }
-}
-
-function moonMode() {
-    gsap.to('.container', {
-        rotation: 180,
-        duration: 2,
-        ease: "power2.inOut",
-        onComplete: () => {
-            gsap.to('.container', { rotation: 0, duration: 2, ease: "bounce.out" });
-        }
-    });
-
-    document.body.style.filter = 'hue-rotate(180deg) invert(0.1)';
-    setTimeout(() => {
-        document.body.style.filter = '';
-    }, 4000);
-}
-
-function diamondHands() {
-    const diamonds = ['💎', '🙌', '💪', '🔥'];
-
-    for (let i = 0; i < 20; i++) {
-        const diamond = document.createElement('div');
-        diamond.innerHTML = diamonds[Math.floor(Math.random() * diamonds.length)];
-        diamond.style.position = 'fixed';
-        diamond.style.fontSize = '3rem';
-        diamond.style.left = Math.random() * 100 + '%';
-        diamond.style.top = Math.random() * 100 + '%';
-        diamond.style.pointerEvents = 'none';
-        diamond.style.zIndex = '9999';
-        document.body.appendChild(diamond);
-
-        gsap.to(diamond, {
-            scale: 2,
-            rotation: 360,
-            duration: 1,
-            ease: "power2.out"
-        });
-
-        gsap.to(diamond, {
-            opacity: 0,
-            duration: 2,
-            delay: 1,
-            onComplete: () => diamond.remove()
-        });
-    }
-}
-
-function rocketLaunch() {
-    const rocket = document.createElement('div');
-    rocket.innerHTML = '🚀';
-    rocket.style.position = 'fixed';
-    rocket.style.fontSize = '4rem';
-    rocket.style.bottom = '10px';
-    rocket.style.left = '50%';
-    rocket.style.transform = 'translateX(-50%)';
-    rocket.style.zIndex = '9999';
-    document.body.appendChild(rocket);
-
-    gsap.to(rocket, {
-        y: -window.innerHeight - 100,
-        rotation: 45,
-        duration: 3,
-        ease: "power2.out",
-        onComplete: () => rocket.remove()
-    });
-
-    gsap.to('body', {
-        x: 5,
-        duration: 0.1,
-        repeat: 20,
-        yoyo: true,
-        onComplete: () => gsap.set('body', { x: 0 })
-    });
-}
-
-function rugCheck() {
-    const messages = [
-        "✅ LP LOCKED FOREVER!",
-        "✅ 0% TAXES CONFIRMED!",
-        "✅ NO TEAM TOKENS!",
-        "✅ PUMP.FUN VERIFIED!",
-        "✅ COMMUNITY OWNED!",
-        "🚀 SAFEST LAUNCH EVER!"
-    ];
-
-    const message = messages[Math.floor(Math.random() * messages.length)];
-
-    const checkResult = document.createElement('div');
-    checkResult.innerHTML = message;
-    checkResult.style.position = 'fixed';
-    checkResult.style.top = '50%';
-    checkResult.style.left = '50%';
-    checkResult.style.transform = 'translate(-50%, -50%)';
-    checkResult.style.background = 'rgba(0,255,0,0.9)';
-    checkResult.style.color = '#000';
-    checkResult.style.padding = '20px';
-    checkResult.style.borderRadius = '15px';
-    checkResult.style.fontSize = '2rem';
-    checkResult.style.fontWeight = 'bold';
-    checkResult.style.zIndex = '9999';
-    checkResult.style.border = '3px solid #fff';
-    document.body.appendChild(checkResult);
-
-    gsap.from(checkResult, { scale: 0, duration: 0.5, ease: "back.out(1.7)" });
-    gsap.to(checkResult, {
-        opacity: 0,
-        scale: 1.5,
-        duration: 1,
-        delay: 2,
-        onComplete: () => checkResult.remove()
-    });
-}
 
 // Floating emojis
 function createFloatingEmoji() {
@@ -929,27 +763,7 @@ class MemeDatabase {
         }
     }
 
-    async deleteMeme(id) {
-        try {
-            const response = await fetch(`${this.apiUrl}/memes/${id}`, {
-                method: 'DELETE'
-            });
 
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-            // Remove from local array
-            const index = this.memes.findIndex(meme => meme.id === id);
-            if (index !== -1) {
-                const deleted = this.memes.splice(index, 1)[0];
-                console.log(`🗑️ Deleted meme: "${deleted.text}"`);
-                this.updateGalleryDisplay();
-                return true;
-            }
-        } catch (error) {
-            console.error('Failed to delete meme:', error);
-            return false;
-        }
-    }
 
     async getStats() {
         try {
@@ -3179,21 +2993,6 @@ function updateMemeGallery() {
 
         memeDiv.innerHTML = `
             <img src="${imageSrc}" style="width: 100%; height: 120px; object-fit: cover;" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIEVycm9yPC90ZXh0Pjwvc3ZnPg=='" />
-            <div style="position: absolute; top: 5px; right: 5px;">
-                <button onclick="deleteMemeFromGallery('${meme.id}')" style="
-                    background: rgba(255,0,0,0.8);
-                    border: none;
-                    border-radius: 50%;
-                    width: 25px;
-                    height: 25px;
-                    color: white;
-                    cursor: pointer;
-                    font-size: 12px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                ">×</button>
-            </div>
             <div style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(transparent, rgba(0,0,0,0.9)); color: #fff; padding: 8px; font-size: 0.8rem;">
                 <div style="font-weight: bold; margin-bottom: 2px;">
                     ${meme.text.substring(0, 25)}${meme.text.length > 25 ? '...' : ''}
@@ -3217,10 +3016,7 @@ function updateMemeGallery() {
             memeDiv.style.boxShadow = '0 4px 15px rgba(0,0,0,0.2)';
         });
 
-        memeDiv.addEventListener('click', (e) => {
-            // Don't trigger if delete button was clicked
-            if (e.target.tagName === 'BUTTON') return;
-
+        memeDiv.addEventListener('click', () => {
             currentAIMeme.imageUrl = meme.imageUrl;
             currentAIMeme.text = meme.text;
             currentAIMeme.type = meme.type;
@@ -3291,28 +3087,7 @@ function getTimeAgo(timestamp) {
     return memeTime.toLocaleDateString();
 }
 
-async function deleteMemeFromGallery(memeId) {
-    if (!confirm('Delete this meme? This cannot be undone! 🗑️')) return;
 
-    try {
-        const success = await memeDB.deleteMeme(memeId);
-        if (success) {
-            // Remove from legacy gallery too
-            const index = memeGallery.findIndex(meme => meme.id === memeId);
-            if (index !== -1) {
-                memeGallery.splice(index, 1);
-            }
-
-            // Show success message
-            showDownloadStatus('🗑️ Meme deleted successfully!', 'success');
-        } else {
-            showDownloadStatus('❌ Failed to delete meme', 'error');
-        }
-    } catch (error) {
-        console.error('Error deleting meme:', error);
-        showDownloadStatus('❌ Error deleting meme', 'error');
-    }
-}
 
 function showAllMemesModal() {
     const allMemes = memeDB.getAllMemes();
@@ -3377,20 +3152,8 @@ function showAllMemesModal() {
                             border: 2px solid transparent;
                         " onmouseenter="this.style.transform='scale(1.05)'; this.style.borderColor='#00ff88';"
                            onmouseleave="this.style.transform='scale(1)'; this.style.borderColor='transparent';"
-                           onclick="selectMemeFromModal('${meme.id}', '${meme.imageUrl}', '${meme.text.replace(/'/g, "\\'")}', '${meme.type}')">
+                           onclick="selectMemeFromModal('${meme.imageUrl}', '${meme.text.replace(/'/g, "\\'")}', '${meme.type}')">
                             <img src="${imageSrc}" style="width: 100%; height: 150px; object-fit: cover;" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIEVycm9yPC90ZXh0Pjwvc3ZnPg=='" />
-                            <div style="position: absolute; top: 5px; right: 5px;">
-                                <button onclick="event.stopPropagation(); deleteMemeFromGallery('${meme.id}')" style="
-                                    background: rgba(255,0,0,0.8);
-                                    border: none;
-                                    border-radius: 50%;
-                                    width: 25px;
-                                    height: 25px;
-                                    color: white;
-                                    cursor: pointer;
-                                    font-size: 12px;
-                                ">×</button>
-                            </div>
                             <div style="padding: 10px; background: rgba(0,0,0,0.8);">
                                 <div style="font-weight: bold; margin-bottom: 5px; font-size: 0.9rem;">
                                     ${meme.text.substring(0, 30)}${meme.text.length > 30 ? '...' : ''}
@@ -3426,7 +3189,7 @@ function closeAllMemesModal() {
     }
 }
 
-function selectMemeFromModal(memeId, imageUrl, text, type) {
+function selectMemeFromModal(imageUrl, text, type) {
     currentAIMeme.imageUrl = imageUrl;
     currentAIMeme.text = text;
     currentAIMeme.type = type;

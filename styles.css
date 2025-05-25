@@ -489,6 +489,8 @@ body {
     position: relative;
     overflow: hidden;
     user-select: none; /* Prevent text selection on rapid clicks */
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
+    touch-action: manipulation; /* Optimize for touch */
 }
 
 .fomo-button:hover {
@@ -543,6 +545,9 @@ body {
     gap: 8px;
     margin: 0 auto;
     text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
 }
 
 .fomo-share-button:hover {
@@ -908,10 +913,23 @@ body {
         font-size: 1.2rem;
     }
 
-    /* FOMO Meter Mobile Styles */
+    /* FOMO Meter Mobile Optimizations */
+    .fomo-meter-container {
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 15px;
+    }
+
     .fomo-meter {
         grid-template-columns: 1fr;
-        gap: 20px;
+        gap: 15px;
+    }
+
+    .fomo-thermometer {
+        height: 200px;
+        padding: 15px;
+        margin: 0 auto;
+        max-width: 300px;
     }
 
     .fomo-levels {
@@ -919,23 +937,255 @@ body {
         flex-direction: row;
         justify-content: space-around;
         margin-top: 15px;
+        flex-wrap: wrap;
+        gap: 8px;
     }
 
     .fomo-level {
-        font-size: 0.8rem;
-        padding: 6px 8px;
+        font-size: 0.7rem;
+        padding: 4px 8px;
+        min-width: 60px;
+        text-align: center;
+    }
+
+    .fomo-stats {
+        gap: 15px;
+    }
+
+    .fomo-stat {
+        padding: 15px;
+    }
+
+    .stat-number {
+        font-size: 1.8rem;
+    }
+
+    .stat-label {
+        font-size: 0.9rem;
+    }
+
+    .fomo-button-container {
+        margin: 20px 0;
     }
 
     .fomo-button {
-        font-size: 1.5rem;
-        padding: 15px 30px;
+        font-size: 1.3rem;
+        padding: 15px 25px;
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto;
+        display: block;
     }
 
+    .fomo-button-emoji {
+        font-size: 1.8rem;
+        margin-left: 8px;
+    }
+
+    .fomo-button-stats {
+        font-size: 1rem;
+        margin-top: 10px;
+    }
+
+    .fomo-share-button {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+        max-width: 250px;
+    }
+
+    /* World Map Mobile */
+    .world-map-container {
+        padding: 15px;
+        margin: 15px 0;
+    }
+
+    .world-map {
+        height: 200px;
+    }
+
+    .map-legend {
+        flex-direction: column;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .legend-item {
+        font-size: 0.8rem;
+    }
+
+    /* Leaderboards Mobile */
     .leaderboards-container {
         grid-template-columns: 1fr;
+        gap: 15px;
+        margin: 15px 0;
+    }
+
+    .leaderboard {
+        padding: 15px;
+    }
+
+    .leaderboard h3 {
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+    }
+
+    .leaderboard-item {
+        padding: 8px;
+        grid-template-columns: 30px 1fr auto;
+        gap: 8px;
+    }
+
+    .leaderboard-item .rank {
+        font-size: 0.9rem;
+    }
+
+    .leaderboard-item .name {
+        font-size: 0.85rem;
+    }
+
+    .leaderboard-item .score {
+        font-size: 0.8rem;
+    }
+
+    /* Achievements Mobile */
+    .achievements-container {
+        padding: 15px;
+        margin: 15px 0;
     }
 
     .achievements-grid {
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 10px;
+    }
+
+    .achievement {
+        padding: 10px;
+    }
+
+    .achievement-icon {
+        font-size: 1.5rem;
+        margin-bottom: 5px;
+    }
+
+    .achievement-name {
+        font-size: 0.8rem;
+        margin-bottom: 3px;
+    }
+
+    .achievement-desc {
+        font-size: 0.7rem;
+    }
+
+    /* Activity Feed Mobile */
+    .activity-feed-container {
+        padding: 15px;
+        margin: 15px 0;
+    }
+
+    .activity-feed {
+        max-height: 150px;
+        gap: 8px;
+    }
+
+    .activity-item {
+        padding: 8px;
+    }
+
+    .activity-time {
+        font-size: 0.7rem;
+    }
+
+    .activity-text {
+        font-size: 0.8rem;
+    }
+}
+
+/* Extra small mobile devices (phones in portrait) */
+@media (max-width: 480px) {
+    .fomo-meter-container {
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 10px;
+    }
+
+    .fomo-thermometer {
+        height: 150px;
+        padding: 10px;
+        max-width: 250px;
+    }
+
+    .fomo-levels {
+        gap: 5px;
+        margin-top: 10px;
+    }
+
+    .fomo-level {
+        font-size: 0.6rem;
+        padding: 3px 6px;
+        min-width: 50px;
+    }
+
+    .fomo-button {
+        font-size: 1.1rem;
+        padding: 12px 20px;
+        max-width: 280px;
+    }
+
+    .fomo-button-emoji {
+        font-size: 1.5rem;
+        margin-left: 5px;
+    }
+
+    .stat-number {
+        font-size: 1.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.8rem;
+    }
+
+    .world-map {
+        height: 150px;
+    }
+
+    .leaderboard-item {
+        grid-template-columns: 25px 1fr auto;
+        gap: 6px;
+        padding: 6px;
+    }
+
+    .leaderboard-item .rank {
+        font-size: 0.8rem;
+    }
+
+    .leaderboard-item .name {
+        font-size: 0.75rem;
+    }
+
+    .leaderboard-item .score {
+        font-size: 0.7rem;
+    }
+
+    .achievements-grid {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 8px;
+    }
+
+    .achievement {
+        padding: 8px;
+    }
+
+    .achievement-icon {
+        font-size: 1.2rem;
+        margin-bottom: 3px;
+    }
+
+    .achievement-name {
+        font-size: 0.7rem;
+        margin-bottom: 2px;
+    }
+
+    .achievement-desc {
+        font-size: 0.6rem;
     }
 }

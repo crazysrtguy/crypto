@@ -18,11 +18,33 @@ const upload = multer({
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
-app.use(express.static('.'));
+
+// Serve static files with proper headers
+app.use(express.static(__dirname, {
+    setHeaders: (res, path) => {
+        if (path.endsWith('.css')) {
+            res.setHeader('Content-Type', 'text/css');
+        }
+        if (path.endsWith('.js')) {
+            res.setHeader('Content-Type', 'application/javascript');
+        }
+    }
+}));
 
 // Serve the main HTML file
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// Explicitly serve CSS and JS files
+app.get('/styles.css', (req, res) => {
+    res.setHeader('Content-Type', 'text/css');
+    res.sendFile(path.join(__dirname, 'styles.css'));
+});
+
+app.get('/script.js', (req, res) => {
+    res.setHeader('Content-Type', 'application/javascript');
+    res.sendFile(path.join(__dirname, 'script.js'));
 });
 
 // API Routes for Memes
@@ -288,6 +310,24 @@ app.get('/api/stats', async (req, res) => {
         console.error('Error fetching stats:', error);
         res.status(500).json({ error: 'Failed to fetch stats' });
     }
+});
+
+// Debug endpoint for Vercel deployment
+app.get('/api/debug', (req, res) => {
+    const fs = require('fs');
+    const debug = {
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
+        __dirname: __dirname,
+        files: {
+            'index.html': fs.existsSync(path.join(__dirname, 'index.html')),
+            'styles.css': fs.existsSync(path.join(__dirname, 'styles.css')),
+            'script.js': fs.existsSync(path.join(__dirname, 'script.js'))
+        },
+        headers: req.headers,
+        url: req.url
+    };
+    res.json(debug);
 });
 
 // Helper function to update meme stats

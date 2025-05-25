@@ -6,6 +6,25 @@
     <title>$CRYPTO - Crackhead Reckless Yeet Playground Token Only</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="./styles.css">
+    <!-- Fallback CSS loading for deployment -->
+    <script>
+        // Check if CSS loaded, if not try alternative paths
+        setTimeout(() => {
+            const testEl = document.createElement('div');
+            testEl.className = 'logo';
+            document.body.appendChild(testEl);
+            const styles = window.getComputedStyle(testEl);
+            if (styles.fontSize === '16px' || !styles.fontSize.includes('rem')) {
+                console.warn('CSS not loaded, trying fallback...');
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = '/styles.css';
+                document.head.appendChild(link);
+            }
+            document.body.removeChild(testEl);
+        }, 100);
+    </script>
 </head>
 <body>
     <div class="floating-emojis" id="floatingEmojis"></div>

@@ -5,17 +5,20 @@ AI-powered meme generator with Prisma database and Twitter sharing capabilities.
 ## 🌟 Features
 
 - 🎨 AI-powered meme generation
-- 📚 Persistent meme database with Prisma 
+- 📚 Persistent meme database with Prisma
+- 🌐 **IPFS storage** via Pinata for permanent, decentralized meme hosting
 - 🐦 Enhanced Twitter sharing with image upload
 - 💾 Reliable meme downloads
 - 📊 Meme statistics and analytics
 - 🗑️ Meme management (delete, view all)
+- 🔗 **NFT-ready** metadata and storage
 
 ## 🛠️ Tech Stack
 
 - **Frontend**: HTML, CSS, JavaScript
 - **Backend**: Node.js, Express
 - **Database**: PostgreSQL with Prisma ORM
+- **Storage**: IPFS via Pinata for decentralized meme hosting
 - **Deployment**: Vercel
 - **AI**: Pollinations.ai for image generation
 
@@ -24,7 +27,8 @@ AI-powered meme generator with Prisma database and Twitter sharing capabilities.
 ### Prerequisites
 
 1. **Prisma Accelerate Database**: You already have this set up
-2. **Vercel Account**: Sign up at [vercel.com](https://vercel.com)
+2. **Pinata IPFS Account**: See [PINATA_SETUP.md](./PINATA_SETUP.md) for detailed setup
+3. **Vercel Account**: Sign up at [vercel.com](https://vercel.com)
 
 ### Steps
 

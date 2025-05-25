@@ -1,11 +1,18 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const multer = require('multer');
 const { PrismaClient } = require('@prisma/client');
 
 const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 3001;
+
+// Configure multer for file uploads
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
 
 // Middleware
 app.use(cors());
@@ -68,7 +75,7 @@ app.get('/api/memes/type/:type', async (req, res) => {
 // Create a new meme
 app.post('/api/memes', async (req, res) => {
     try {
-        const { imageUrl, imageData, text, type, corsMethod, seed } = req.body;
+        const { imageUrl, imageData, ipfsHash, text, type, corsMethod, seed } = req.body;
 
         if ((!imageUrl && !imageData) || !text || !type) {
             return res.status(400).json({ error: 'Missing required fields' });
@@ -80,6 +87,7 @@ app.post('/api/memes', async (req, res) => {
         const meme = await prisma.meme.create({
             data: {
                 imageUrl: finalImageUrl,
+                ipfsHash: ipfsHash || null,
                 text,
                 type,
                 corsMethod: corsMethod || 'Unknown',
@@ -113,6 +121,75 @@ app.delete('/api/memes/:id', async (req, res) => {
     } catch (error) {
         console.error('Error deleting meme:', error);
         res.status(500).json({ error: 'Failed to delete meme' });
+    }
+});
+
+// Upload to IPFS via Pinata
+app.post('/api/upload-to-ipfs', upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file provided' });
+        }
+
+        const pinataApiKey = process.env.PINATA_API_KEY;
+        const pinataSecretApiKey = process.env.PINATA_SECRET_API_KEY;
+
+        if (!pinataApiKey || !pinataSecretApiKey) {
+            return res.status(500).json({ error: 'Pinata credentials not configured' });
+        }
+
+        // Create form data for Pinata
+        const FormData = require('form-data');
+        const formData = new FormData();
+
+        formData.append('file', req.file.buffer, {
+            filename: req.file.originalname,
+            contentType: req.file.mimetype
+        });
+
+        // Add metadata if provided
+        if (req.body.pinataMetadata) {
+            formData.append('pinataMetadata', req.body.pinataMetadata);
+        }
+
+        // Add options if provided
+        if (req.body.pinataOptions) {
+            formData.append('pinataOptions', req.body.pinataOptions);
+        }
+
+        // Upload to Pinata
+        const response = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
+            method: 'POST',
+            headers: {
+                'pinata_api_key': pinataApiKey,
+                'pinata_secret_api_key': pinataSecretApiKey,
+                ...formData.getHeaders()
+            },
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Pinata upload failed:', errorText);
+            throw new Error(`Pinata upload failed: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('✅ IPFS upload successful:', result.IpfsHash);
+
+        res.json({
+            success: true,
+            ipfsHash: result.IpfsHash,
+            ipfsUrl: `https://ipfs.io/ipfs/${result.IpfsHash}`,
+            pinataUrl: `https://gateway.pinata.cloud/ipfs/${result.IpfsHash}`
+        });
+
+    } catch (error) {
+        console.error('IPFS upload error:', error);
+        res.status(500).json({
+            error: 'Failed to upload to IPFS',
+            details: error.message
+        });
     }
 });
 

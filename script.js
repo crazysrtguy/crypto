@@ -781,16 +781,24 @@ class MemeDatabase {
             // Capture the complete meme as base64 data
             const memeImageData = await this.captureMemeAsBase64();
 
+            if (!memeImageData) {
+                throw new Error('Failed to capture meme image');
+            }
+
+            // Upload to IPFS
+            console.log('📡 Uploading meme to IPFS...');
+            const ipfsHash = await this.uploadToIPFS(memeImageData, text);
+
             const memeData = {
-                imageUrl: memeImageData ? null : imageUrl, // Use original URL as fallback
-                imageData: memeImageData, // Base64 data of complete meme
+                imageUrl: ipfsHash ? `https://ipfs.io/ipfs/${ipfsHash}` : imageUrl,
+                ipfsHash: ipfsHash,
                 text,
                 type,
                 corsMethod: currentAIMeme.corsMethod || 'Unknown',
                 seed: currentAIMeme.seed || null
             };
 
-            console.log('💾 Saving complete meme to database...');
+            console.log('💾 Saving meme with IPFS link to database...');
             const response = await fetch(`${this.apiUrl}/memes`, {
                 method: 'POST',
                 headers: {
@@ -807,7 +815,7 @@ class MemeDatabase {
             // Add to local array for immediate display
             this.memes.unshift(meme);
 
-            console.log(`✅ Added complete meme to database: "${text}"`);
+            console.log(`✅ Added meme to database with IPFS: "${text}"`);
 
             // Update the gallery display
             this.updateGalleryDisplay();
@@ -892,6 +900,63 @@ class MemeDatabase {
             return canvas;
         } catch (error) {
             console.error('Failed to create complete meme canvas:', error);
+            return null;
+        }
+    }
+
+    async uploadToIPFS(base64Data, memeText) {
+        try {
+            // Convert base64 to blob
+            const response = await fetch(base64Data);
+            const blob = await response.blob();
+
+            // Create form data for Pinata
+            const formData = new FormData();
+            formData.append('file', blob, `crypto-meme-${Date.now()}.png`);
+
+            // Add metadata
+            const metadata = JSON.stringify({
+                name: `$CRYPTO Meme: ${memeText.substring(0, 50)}`,
+                description: `AI-generated $CRYPTO meme: "${memeText}"`,
+                attributes: [
+                    {
+                        trait_type: "Type",
+                        value: currentAIMeme.type || "unknown"
+                    },
+                    {
+                        trait_type: "Generated",
+                        value: new Date().toISOString()
+                    },
+                    {
+                        trait_type: "CORS Method",
+                        value: currentAIMeme.corsMethod || "Unknown"
+                    }
+                ]
+            });
+            formData.append('pinataMetadata', metadata);
+
+            // Add options
+            const options = JSON.stringify({
+                cidVersion: 1,
+            });
+            formData.append('pinataOptions', options);
+
+            // Upload to Pinata via our backend
+            const uploadResponse = await fetch('/api/upload-to-ipfs', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!uploadResponse.ok) {
+                throw new Error(`IPFS upload failed: ${uploadResponse.status}`);
+            }
+
+            const result = await uploadResponse.json();
+            console.log('✅ IPFS upload successful:', result.ipfsHash);
+
+            return result.ipfsHash;
+        } catch (error) {
+            console.error('❌ IPFS upload failed:', error);
             return null;
         }
     }
@@ -1025,18 +1090,80 @@ function generateAIMeme(type) {
     };
 
     const memeTexts = {
-        stonks: ["STONKS 📈", "CRYPTO GAINS 🚀", "DIAMOND HANDS 💎", "TO THE MOON 🌙"],
-        drake: ["NO: Traditional Investing", "YES: $CRYPTO ONLY", "REJECT: Savings Account", "EMBRACE: CRYPTO"],
-        brain: ["SMALL BRAIN: Stocks", "BIG BRAIN: Crypto", "GALAXY BRAIN: $CRYPTO", "UNIVERSE BRAIN: Diamond Hands"],
-        crying: ["MY PORTFOLIO 😭", "BOUGHT THE TOP", "RAMEN AGAIN", "STILL HODLING 💎"],
-        diamond: ["DIAMOND HANDS 💎", "NEVER SELLING", "HODL FOREVER", "CRYSTAL CLEAR 💎"],
-        moon: ["TO THE MOON 🚀", "MOON MISSION", "SPACE BOUND 🌙", "LUNAR LANDING"],
-        broke: ["BROKE BUT BULLISH", "RAMEN LIFE 🍜", "EMPTY WALLET", "CRYPTO > FOOD"],
-        lambo: ["LAMBO SOON 🏎️", "DREAM CAR", "CRYPTO GAINS", "MOON LAMBO"],
-        ramen: ["RAMEN AGAIN 🍜", "BROKE LIFE", "CRYPTO DIET", "NOODLE GANG"],
-        rocket: ["ROCKET FUEL 🚀", "BLAST OFF", "SPACE MISSION", "MOON BOUND"],
-        degen: ["PURE DEGEN 🤡", "CHAOS MODE", "MAXIMUM RISK", "YOLO LIFE"],
-        random: ["CRYPTO CHAOS", "MEME MAGIC", "DEGEN ENERGY", "MOON VIBES"]
+        stonks: [
+            "STONKS 📈", "CRYPTO GAINS 🚀", "DIAMOND HANDS 💎", "TO THE MOON 🌙",
+            "NUMBER GO UP", "INFINITE MONEY GLITCH", "STONK MARKET GENIUS", "BUY HIGH SELL LOW",
+            "PORTFOLIO TO THE MOON", "GENERATIONAL WEALTH", "RETIREMENT SPEEDRUN", "LAMBO INCOMING",
+            "WIFE CHANGING MONEY", "FINANCIAL FREEDOM", "PASSIVE INCOME KING", "COMPOUND INTEREST",
+            "BULL MARKET FOREVER", "BEAR MARKET CANCELLED", "STONKS ONLY GO UP", "MONEY PRINTER GO BRRR"
+        ],
+        drake: [
+            "NO: Traditional Investing", "YES: $CRYPTO ONLY", "REJECT: Savings Account", "EMBRACE: CRYPTO",
+            "NO: Fiat Currency", "YES: Digital Gold", "REJECT: Banks", "EMBRACE: DeFi",
+            "NO: Paper Hands", "YES: Diamond Hands", "REJECT: Fear", "EMBRACE: GREED",
+            "NO: Selling", "YES: Hodling", "REJECT: Profits", "EMBRACE: Losses"
+        ],
+        brain: [
+            "SMALL BRAIN: Stocks", "BIG BRAIN: Crypto", "GALAXY BRAIN: $CRYPTO", "UNIVERSE BRAIN: Diamond Hands",
+            "SMOOTH BRAIN: Panic Sell", "WRINKLE BRAIN: Buy Dip", "GALAXY BRAIN: Hodl Forever", "UNIVERSE BRAIN: Sell Kidney",
+            "TINY BRAIN: Save Money", "BIG BRAIN: Invest", "HUGE BRAIN: Crypto", "COSMIC BRAIN: Leverage Trading"
+        ],
+        crying: [
+            "MY PORTFOLIO 😭", "BOUGHT THE TOP", "RAMEN AGAIN", "STILL HODLING 💎",
+            "DOWN 90% BUT HODLING", "WIFE LEFT ME", "KIDS DISOWNED ME", "LIVING IN CAR",
+            "SOLD KIDNEY FOR CRYPTO", "EATING CARDBOARD", "WATER SOUP DINNER", "PLASMA DONATION KING"
+        ],
+        diamond: [
+            "DIAMOND HANDS 💎", "NEVER SELLING", "HODL FOREVER", "CRYSTAL CLEAR 💎",
+            "PRESSURE MAKES DIAMONDS", "UNBREAKABLE GRIP", "STEEL RESOLVE", "IRON WILL",
+            "DIAMOND FORMATION", "CARBON COMPRESSION", "GEOLOGICAL PATIENCE", "CRYSTALLINE STRUCTURE",
+            "HARDEST SUBSTANCE", "ETERNAL HODLER", "DIAMOND MIND", "PRECIOUS STONES"
+        ],
+        moon: [
+            "TO THE MOON 🚀", "MOON MISSION", "SPACE BOUND 🌙", "LUNAR LANDING",
+            "ESCAPE VELOCITY", "ORBITAL MECHANICS", "APOLLO 11", "NEIL ARMSTRONG",
+            "ONE SMALL STEP", "GIANT LEAP", "MOON ROCKS", "LUNAR SURFACE",
+            "SPACE EXPLORATION", "COSMIC JOURNEY", "INTERSTELLAR TRAVEL", "GALAXY FAR AWAY"
+        ],
+        broke: [
+            "BROKE BUT BULLISH", "RAMEN LIFE 🍜", "EMPTY WALLET", "CRYPTO > FOOD",
+            "BEANS AND RICE DIET", "WATER SOUP SPECIAL", "CARDBOARD DINNER", "AIR SANDWICH",
+            "FASTING FOR CRYPTO", "HUNGER GAMES", "SURVIVAL MODE", "POVERTY SPEEDRUN",
+            "NEGATIVE NET WORTH", "DEBT COLLECTOR CALLS", "EVICTION NOTICE", "LIVING IN TENT"
+        ],
+        lambo: [
+            "LAMBO SOON 🏎️", "DREAM CAR", "CRYPTO GAINS", "MOON LAMBO",
+            "FERRARI INCOMING", "BUGATTI DREAMS", "MCLAREN VIBES", "PORSCHE GOALS",
+            "SUPERCAR GARAGE", "EXOTIC COLLECTION", "HYPERCAR LIFE", "LUXURY LIFESTYLE",
+            "VALET PARKING", "CARBON FIBER", "V12 ENGINE", "HORSEPOWER ADDICTION"
+        ],
+        ramen: [
+            "RAMEN AGAIN 🍜", "BROKE LIFE", "CRYPTO DIET", "NOODLE GANG",
+            "SODIUM OVERDOSE", "MSG ADDICTION", "FLAVOR PACKET", "COLLEGE CUISINE",
+            "BACHELOR CHOW", "SURVIVAL FOOD", "INSTANT NOODLES", "POVERTY MEAL",
+            "WATER AND SALT", "CARB LOADING", "CHEAP EATS", "STUDENT SPECIAL"
+        ],
+        rocket: [
+            "ROCKET FUEL 🚀", "BLAST OFF", "SPACE MISSION", "MOON BOUND",
+            "ESCAPE VELOCITY", "ORBITAL MECHANICS", "THRUST VECTOR", "PAYLOAD DELIVERY",
+            "STAGE SEPARATION", "BOOSTER IGNITION", "COUNTDOWN SEQUENCE", "LAUNCH WINDOW",
+            "MISSION CONTROL", "HOUSTON WE HAVE", "APOLLO PROGRAM", "SPACEX VIBES"
+        ],
+        degen: [
+            "PURE DEGEN 🤡", "CHAOS MODE", "MAXIMUM RISK", "YOLO LIFE",
+            "SMOOTH BRAIN MOVES", "GALAXY BRAIN PLAYS", "BIG BRAIN TIME", "WRINKLE BRAIN",
+            "MONKE SEE MONKE DO", "APE TOGETHER STRONG", "BANANA REPUBLIC", "GORILLA WARFARE",
+            "CRAYON EATING CONTEST", "GLUE SNIFFING CHAMPION", "PAINT CHIP CONNOISSEUR", "LEAD PAINT LOVER",
+            "WINDOW LICKER", "HELMET WEARER", "SAFETY SCISSORS", "VELCRO SHOES"
+        ],
+        random: [
+            "CRYPTO CHAOS", "MEME MAGIC", "DEGEN ENERGY", "MOON VIBES",
+            "HOPIUM OVERDOSE", "COPIUM ADDICTION", "DELUSION LEVEL MAX", "REALITY CHECK BOUNCED",
+            "SANITY LEFT CHAT", "LOGIC DISCONNECTED", "BRAIN.EXE STOPPED", "COMMON SENSE UNINSTALLED",
+            "SMART MONEY EXITED", "DUMB MONEY ENTERED", "WHALE MANIPULATION", "SHRIMP PORTFOLIO",
+            "PROBABLY NOTHING", "BULLISH AF", "BEARISH SENTIMENT", "CRAB MARKET",
+            "SIDEWAYS ACTION", "PUMP AND DUMP", "RUG PULL INCOMING", "DIAMOND HANDS ACTIVATED"
+        ]
     };
 
     showMemeLoading();
@@ -1738,7 +1865,158 @@ function randomMemeText() {
         "WAGMI TOGETHER",
         "PURE DEGEN ENERGY",
         "LAMBO OR RAMEN",
-        "CRYPTO CHOSE ME"
+        "CRYPTO CHOSE ME",
+        "SER THIS IS WENDY'S",
+        "HAVE FUN STAYING POOR",
+        "NUMBER GO UP TECHNOLOGY",
+        "ZOOM OUT BRO",
+        "JUST UP FOREVER",
+        "COPE AND SEETHE",
+        "PROBABLY NOTHING",
+        "BULLISH AF 📈",
+        "BEAR MARKET CANCELLED",
+        "GENERATIONAL WEALTH",
+        "RETIREMENT SPEEDRUN",
+        "WIFE CHANGING MONEY",
+        "FINANCIAL ADVICE: YOLO",
+        "SELL KIDNEY FOR CRYPTO",
+        "MORTGAGE THE HOUSE",
+        "KIDS COLLEGE FUND = GONE",
+        "EATING CARDBOARD TONIGHT",
+        "BEANS AND RICE DIET",
+        "LIVING IN PARENTS BASEMENT",
+        "SOLD MY CAR FOR CRYPTO",
+        "MAXED OUT CREDIT CARDS",
+        "BORROWING FROM FRIENDS",
+        "SECOND JOB AT MCDONALDS",
+        "UBER DRIVER BY NIGHT",
+        "BLOOD BANK REGULAR",
+        "PLASMA DONATION KING",
+        "COUCH CUSHION MINING",
+        "SPARE CHANGE COLLECTOR",
+        "GARAGE SALE EVERYTHING",
+        "EBAY SELLING SPREE",
+        "FACEBOOK MARKETPLACE PRO",
+        "CRAIGSLIST HUSTLER",
+        "GIG ECONOMY WARRIOR",
+        "SIDE HUSTLE MASTER",
+        "GRINDSET MENTALITY",
+        "SIGMA MALE ENERGY",
+        "ALPHA CRYPTO CHAD",
+        "BETA FIAT CUCK",
+        "GIGACHAD HODLER",
+        "VIRGIN PAPER HANDS",
+        "CHAD DIAMOND HANDS",
+        "WOJAK PORTFOLIO",
+        "PEPE GAINS INCOMING",
+        "FEELS GOOD MAN",
+        "RARE PEPE COLLECTOR",
+        "DOGE TO THE MOON",
+        "SHIBA INU ARMY",
+        "APE TOGETHER STRONG",
+        "MONKE SEE MONKE BUY",
+        "BANANA FOR SCALE",
+        "SMOOTH BRAIN MOVES",
+        "WRINKLE BRAIN PLAYS",
+        "BIG BRAIN TIME",
+        "GALAXY BRAIN STRATEGY",
+        "5D CHESS MOVES",
+        "PLAYING 4D CHECKERS",
+        "INTERDIMENSIONAL TRADING",
+        "TIME TRAVELER CONFIRMED",
+        "FUTURE MILLIONAIRE",
+        "PAST BROKE COLLEGE KID",
+        "PRESENT RAMEN EATER",
+        "HOPIUM OVERDOSE",
+        "COPIUM ADDICTION",
+        "HOPIUM DEALER",
+        "COPIUM SUPPLIER",
+        "HOPIUM FACTORY",
+        "COPIUM WAREHOUSE",
+        "DELUSION LEVEL: MAXIMUM",
+        "REALITY CHECK BOUNCED",
+        "SANITY LEFT THE CHAT",
+        "LOGIC HAS DISCONNECTED",
+        "REASON.EXE STOPPED WORKING",
+        "BRAIN.DLL NOT FOUND",
+        "COMMON SENSE UNINSTALLED",
+        "WISDOM CORRUPTED",
+        "INTELLIGENCE DEPRECATED",
+        "SMART MONEY EXITED",
+        "DUMB MONEY ENTERED",
+        "RETAIL INVESTOR DETECTED",
+        "INSTITUTIONAL MONEY FLED",
+        "WHALES ARE DUMPING",
+        "SHRIMP KEEP BUYING",
+        "PLANKTON PORTFOLIO",
+        "MINNOW MOVES",
+        "GOLDFISH MEMORY",
+        "SHARK ATTACK INCOMING",
+        "WHALE MANIPULATION",
+        "DOLPHIN SPLASH",
+        "OCTOPUS TENTACLES",
+        "JELLYFISH BRAIN",
+        "STARFISH REGENERATION",
+        "CRAB MARKET SIDEWAYS",
+        "LOBSTER CLAWS DIAMOND",
+        "SHRIMP ON THE BARBIE",
+        "FISH AND CHIPS DINNER",
+        "SUSHI GRADE LOSSES",
+        "CAVIAR DREAMS",
+        "TUNA SANDWICH REALITY",
+        "WHEN LAMBO SER?",
+        "GM CRYPTO TWITTER",
+        "GN SWEET DREAMS",
+        "FUD IS TEMPORARY",
+        "DIAMOND HANDS ETERNAL",
+        "PAPER HANDS NGMI",
+        "WAGMI TO THE MOON",
+        "HFSP NORMIES",
+        "IYKYK CRYPTO GANG",
+        "DYOR ALWAYS",
+        "NFA BUT BULLISH",
+        "REKT BUT LEARNING",
+        "SAFU FUNDS ONLY",
+        "BUIDL NOT SPECULATION",
+        "HODL GANG RISE UP",
+        "FOMO INTO EVERYTHING",
+        "YOLO LIFE CHOICES",
+        "NGMI WITHOUT RISK",
+        "WAGMI TOGETHER STRONG",
+        "HFSP PAPER HANDS",
+        "IYKYK DIAMOND CLUB",
+        "DYOR OR GET REKT",
+        "NFA FINANCIAL ADVICE",
+        "SAFU WALLET SECURED",
+        "BUIDL THE FUTURE",
+        "FOMO FEAR MISSING OUT",
+        "YOLO YOU ONLY LIVE",
+        "REKT ABSOLUTELY DESTROYED",
+        "CHAD ENERGY ACTIVATED",
+        "VIRGIN FIAT MINDSET",
+        "GIGACHAD CRYPTO HOLDER",
+        "BETA PAPER HANDS",
+        "ALPHA DIAMOND HANDS",
+        "SIGMA GRINDSET MODE",
+        "BASED AND CRYPTOPILLED",
+        "CRINGE FIAT LOVER",
+        "COPE HARDER NOCOINER",
+        "SEETHE MORE HATER",
+        "DILATE PORTFOLIO LOSSES",
+        "TOUCH GRASS NORMIE",
+        "RATIO PLUS L PLUS",
+        "SKILL ISSUE DETECTED",
+        "GET GOOD SCRUB",
+        "IMAGINE NOT HODLING",
+        "COULDN'T BE ME",
+        "STAY MAD BOOMER",
+        "OK ZOOMER ENERGY",
+        "MILLENNIAL BROKE VIBES",
+        "GEN X FORGOTTEN",
+        "BOOMER MINDSET CRINGE",
+        "ZOOMER DIAMOND HANDS",
+        "ALPHA GEN CRYPTO",
+        "SILENT GEN CONFUSED"
     ];
 
     const randomText = randomTexts[Math.floor(Math.random() * randomTexts.length)];
@@ -2663,7 +2941,6 @@ function updateMemeGallery() {
 
         // Format timestamp
         const timeAgo = getTimeAgo(meme.timestamp);
-        const corsStatus = meme.corsMethod ? `📡 ${meme.corsMethod}` : '';
 
         // Handle both base64 data and regular URLs
         const imageSrc = meme.imageUrl || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjMzMzIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
@@ -2693,7 +2970,6 @@ function updateMemeGallery() {
                     <span>${timeAgo}</span>
                     <span>${meme.type || 'unknown'}</span>
                 </div>
-                ${corsStatus ? `<div style="font-size: 0.6rem; color: #00ff00; margin-top: 2px;">${corsStatus}</div>` : ''}
             </div>
         `;
 

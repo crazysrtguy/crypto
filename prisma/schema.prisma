@@ -16,6 +16,7 @@ datasource db {
 model Meme {
   id          String   @id @default(cuid())
   imageUrl    String
+  ipfsHash    String?
   text        String
   type        String
   corsMethod  String?

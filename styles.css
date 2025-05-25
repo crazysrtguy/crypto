@@ -313,7 +313,7 @@ body {
 }
 
 .ticker-content {
-    animation: scroll 120s linear infinite;
+    animation: scroll 60s linear infinite;
 }
 
 @keyframes scroll {

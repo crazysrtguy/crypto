@@ -778,27 +778,17 @@ class MemeDatabase {
 
     async addMeme(imageUrl, text, type = 'unknown') {
         try {
-            // Capture the complete meme as base64 data
-            const memeImageData = await this.captureMemeAsBase64();
-
-            if (!memeImageData) {
-                throw new Error('Failed to capture meme image');
-            }
-
-            // Upload to IPFS
-            console.log('📡 Uploading meme to IPFS...');
-            const ipfsHash = await this.uploadToIPFS(memeImageData, text);
-
+            // Just save basic meme data to database (no IPFS upload yet)
             const memeData = {
-                imageUrl: ipfsHash ? `https://ipfs.io/ipfs/${ipfsHash}` : imageUrl,
-                ipfsHash: ipfsHash,
+                imageUrl: imageUrl, // Keep original URL for now
+                ipfsHash: null, // Will be set when user downloads/shares
                 text,
                 type,
                 corsMethod: currentAIMeme.corsMethod || 'Unknown',
                 seed: currentAIMeme.seed || null
             };
 
-            console.log('💾 Saving meme with IPFS link to database...');
+            console.log('💾 Saving meme to database...');
             const response = await fetch(`${this.apiUrl}/memes`, {
                 method: 'POST',
                 headers: {
@@ -815,7 +805,7 @@ class MemeDatabase {
             // Add to local array for immediate display
             this.memes.unshift(meme);
 
-            console.log(`✅ Added meme to database with IPFS: "${text}"`);
+            console.log(`✅ Added meme to database: "${text}"`);
 
             // Update the gallery display
             this.updateGalleryDisplay();
@@ -906,48 +896,26 @@ class MemeDatabase {
 
     async uploadToIPFS(base64Data, memeText) {
         try {
+            console.log('🔄 Converting base64 to blob...');
             // Convert base64 to blob
             const response = await fetch(base64Data);
             const blob = await response.blob();
 
-            // Create form data for Pinata
+            console.log('📦 Creating form data for upload...');
+            // Create simple form data for Pinata
             const formData = new FormData();
             formData.append('file', blob, `crypto-meme-${Date.now()}.png`);
 
-            // Add metadata
-            const metadata = JSON.stringify({
-                name: `$CRYPTO Meme: ${memeText.substring(0, 50)}`,
-                description: `AI-generated $CRYPTO meme: "${memeText}"`,
-                attributes: [
-                    {
-                        trait_type: "Type",
-                        value: currentAIMeme.type || "unknown"
-                    },
-                    {
-                        trait_type: "Generated",
-                        value: new Date().toISOString()
-                    },
-                    {
-                        trait_type: "CORS Method",
-                        value: currentAIMeme.corsMethod || "Unknown"
-                    }
-                ]
-            });
-            formData.append('pinataMetadata', metadata);
-
-            // Add options
-            const options = JSON.stringify({
-                cidVersion: 1,
-            });
-            formData.append('pinataOptions', options);
-
-            // Upload to Pinata via our backend
+            console.log('📡 Sending to backend API...');
+            // Upload to Pinata via our backend (simplified)
             const uploadResponse = await fetch('/api/upload-to-ipfs', {
                 method: 'POST',
                 body: formData
             });
 
             if (!uploadResponse.ok) {
+                const errorText = await uploadResponse.text();
+                console.error('Backend response:', errorText);
                 throw new Error(`IPFS upload failed: ${uploadResponse.status}`);
             }
 
@@ -1018,6 +986,35 @@ class MemeDatabase {
     updateGalleryDisplay() {
         // Update the meme gallery in the UI
         updateMemeGallery();
+    }
+}
+
+// Function to update meme with IPFS hash
+async function updateMemeWithIPFS(originalImageUrl, ipfsHash) {
+    try {
+        console.log('🔄 Updating meme with IPFS hash...');
+
+        const response = await fetch(`${memeDB.apiUrl}/memes/update-ipfs`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                originalImageUrl,
+                ipfsHash,
+                ipfsUrl: `https://ipfs.io/ipfs/${ipfsHash}`
+            })
+        });
+
+        if (response.ok) {
+            console.log('✅ Database updated with IPFS hash');
+            // Refresh the gallery to show IPFS URLs
+            memeDB.loadMemes();
+        } else {
+            console.warn('⚠️ Failed to update database with IPFS hash');
+        }
+    } catch (error) {
+        console.error('❌ Error updating meme with IPFS:', error);
     }
 }
 
@@ -1244,6 +1241,9 @@ async function generateAIImage(prompt, text) {
 }
 
 async function loadImageWithCORS(imageUrl) {
+    // Store original URL for database storage
+    currentAIMeme.originalUrl = imageUrl;
+
     // Fast approach: Try blob conversion first (most reliable for downloads)
     try {
         console.log('🚀 Trying fast blob conversion...');
@@ -1426,8 +1426,8 @@ function displayAIMeme(imageUrl, text) {
         // Draw the meme
         drawAllText();
 
-        // Show CORS method status
-        showCORSStatus();
+        // Don't show CORS status anymore - it's distracting
+        // showCORSStatus();
     };
 
     document.getElementById('aiMemeDisplay').style.display = 'block';
@@ -2068,7 +2068,7 @@ function downloadAIMeme() {
     }
 }
 
-function downloadMemeWithBlobSupport() {
+async function downloadMemeWithBlobSupport() {
     try {
         // Create a new canvas for the complete meme
         const canvas = document.createElement('canvas');
@@ -2100,6 +2100,26 @@ function downloadMemeWithBlobSupport() {
             ctx.fillText(element.text, textX, textY);
         });
 
+        // Upload to IPFS before download
+        console.log('📡 Uploading final meme to IPFS...');
+        showDownloadStatus('📡 Uploading to IPFS...', 'info');
+
+        const base64Data = canvas.toDataURL('image/png', 0.9);
+        const memeText = currentAIMeme.text || 'Custom Meme';
+        const ipfsHash = await memeDB.uploadToIPFS(base64Data, memeText);
+
+        if (ipfsHash) {
+            console.log('✅ IPFS upload successful:', ipfsHash);
+
+            // Update database with IPFS hash using original URL
+            await updateMemeWithIPFS(currentAIMeme.originalUrl || currentAIMeme.imageUrl, ipfsHash);
+
+            showDownloadStatus('✅ Uploaded to IPFS! Starting download...', 'success');
+        } else {
+            console.warn('⚠️ IPFS upload failed, proceeding with download');
+            showDownloadStatus('⚠️ IPFS upload failed, downloading anyway...', 'warning');
+        }
+
         // Create download link
         const link = document.createElement('a');
         link.download = `crypto-ai-meme-${Date.now()}.png`;
@@ -2110,7 +2130,9 @@ function downloadMemeWithBlobSupport() {
         link.click();
         document.body.removeChild(link);
 
-        showDownloadStatus('✅ Meme downloaded successfully!', 'success');
+        setTimeout(() => {
+            showDownloadStatus('✅ Meme downloaded successfully!', 'success');
+        }, 1000);
 
     } catch (error) {
         console.error('Blob-supported download failed:', error);
@@ -2176,7 +2198,7 @@ function closeDownloadAlternativeModal() {
     }
 }
 
-function downloadMemeWithCanvas(downloadCanvas, ctx) {
+async function downloadMemeWithCanvas(downloadCanvas, ctx) {
     try {
         // Clear and redraw everything properly
         ctx.clearRect(0, 0, downloadCanvas.width, downloadCanvas.height);
@@ -2205,6 +2227,26 @@ function downloadMemeWithCanvas(downloadCanvas, ctx) {
             ctx.fillText(element.text, textX, textY);
         });
 
+        // Upload to IPFS before download
+        console.log('📡 Uploading final meme to IPFS...');
+        showDownloadStatus('📡 Uploading to IPFS...', 'info');
+
+        const base64Data = downloadCanvas.toDataURL('image/png', 0.9);
+        const memeText = currentAIMeme.text || 'Custom Meme';
+        const ipfsHash = await memeDB.uploadToIPFS(base64Data, memeText);
+
+        if (ipfsHash) {
+            console.log('✅ IPFS upload successful:', ipfsHash);
+
+            // Update database with IPFS hash using original URL
+            await updateMemeWithIPFS(currentAIMeme.originalUrl || currentAIMeme.imageUrl, ipfsHash);
+
+            showDownloadStatus('✅ Uploaded to IPFS! Starting download...', 'success');
+        } else {
+            console.warn('⚠️ IPFS upload failed, proceeding with download');
+            showDownloadStatus('⚠️ IPFS upload failed, downloading anyway...', 'warning');
+        }
+
         // Create download link
         const link = document.createElement('a');
         link.download = `crypto-ai-meme-${Date.now()}.png`;
@@ -2216,7 +2258,9 @@ function downloadMemeWithCanvas(downloadCanvas, ctx) {
         document.body.removeChild(link);
 
         // Show success message
-        showDownloadStatus('✅ Meme downloaded successfully!', 'success');
+        setTimeout(() => {
+            showDownloadStatus('✅ Meme downloaded successfully!', 'success');
+        }, 1000);
 
     } catch (error) {
         console.error('Canvas export failed:', error);
@@ -2889,11 +2933,14 @@ function regenerateAIMeme() {
 
 async function addToMemeGallery(imageUrl, text) {
     try {
-        // Add to database
-        const meme = await memeDB.addMeme(imageUrl, text, currentAIMeme.type);
+        // Use original URL if we have it, not the blob URL
+        const originalUrl = currentAIMeme.originalUrl || imageUrl;
+
+        // Add to database with original URL
+        const meme = await memeDB.addMeme(originalUrl, text, currentAIMeme.type);
 
         // Update legacy gallery for backward compatibility
-        memeGallery.unshift({ imageUrl, text, timestamp: Date.now(), id: meme.id });
+        memeGallery.unshift({ imageUrl: originalUrl, text, timestamp: Date.now(), id: meme.id });
         if (memeGallery.length > 6) memeGallery.pop();
 
         console.log(`✅ Meme added to gallery: "${text}"`);

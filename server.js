@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const multer = require('multer');
+const axios = require('axios');
 const { PrismaClient } = require('@prisma/client');
 
 const app = express();
@@ -124,7 +125,7 @@ app.delete('/api/memes/:id', async (req, res) => {
     }
 });
 
-// Upload to IPFS via Pinata
+// Upload to IPFS via Pinata (simplified approach)
 app.post('/api/upload-to-ipfs', upload.single('file'), async (req, res) => {
     try {
         if (!req.file) {
@@ -134,62 +135,126 @@ app.post('/api/upload-to-ipfs', upload.single('file'), async (req, res) => {
         const pinataApiKey = process.env.PINATA_API_KEY;
         const pinataSecretApiKey = process.env.PINATA_SECRET_API_KEY;
 
+        console.log('🔑 Checking Pinata credentials...');
+        console.log('API Key exists:', !!pinataApiKey);
+        console.log('Secret Key exists:', !!pinataSecretApiKey);
+
+        if (!pinataApiKey || !pinataSecretApiKey) {
+            console.error('❌ Pinata credentials missing!');
+            return res.status(500).json({ error: 'Pinata credentials not configured' });
+        }
+
+        console.log('📤 Uploading to Pinata with file size:', req.file.buffer.length);
+
+        // Use axios for better form-data handling
+        const axios = require('axios');
+        const FormData = require('form-data');
+
+        const formData = new FormData();
+        formData.append('file', req.file.buffer, {
+            filename: `crypto-meme-${Date.now()}.png`,
+            contentType: 'image/png'
+        });
+
+        const response = await axios.post('https://api.pinata.cloud/pinning/pinFileToIPFS', formData, {
+            headers: {
+                ...formData.getHeaders(),
+                'pinata_api_key': pinataApiKey,
+                'pinata_secret_api_key': pinataSecretApiKey
+            },
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity
+        });
+
+        console.log('✅ IPFS upload successful:', response.data.IpfsHash);
+
+        res.json({
+            success: true,
+            ipfsHash: response.data.IpfsHash,
+            ipfsUrl: `https://ipfs.io/ipfs/${response.data.IpfsHash}`,
+            pinataUrl: `https://gateway.pinata.cloud/ipfs/${response.data.IpfsHash}`
+        });
+
+    } catch (error) {
+        console.error('IPFS upload error:', error.response?.data || error.message);
+        res.status(500).json({
+            error: 'Failed to upload to IPFS',
+            details: error.response?.data || error.message
+        });
+    }
+});
+
+// Test Pinata credentials
+app.get('/api/test-pinata', async (req, res) => {
+    try {
+        const pinataApiKey = process.env.PINATA_API_KEY;
+        const pinataSecretApiKey = process.env.PINATA_SECRET_API_KEY;
+
         if (!pinataApiKey || !pinataSecretApiKey) {
             return res.status(500).json({ error: 'Pinata credentials not configured' });
         }
 
-        // Create form data for Pinata
-        const FormData = require('form-data');
-        const formData = new FormData();
-
-        formData.append('file', req.file.buffer, {
-            filename: req.file.originalname,
-            contentType: req.file.mimetype
-        });
-
-        // Add metadata if provided
-        if (req.body.pinataMetadata) {
-            formData.append('pinataMetadata', req.body.pinataMetadata);
-        }
-
-        // Add options if provided
-        if (req.body.pinataOptions) {
-            formData.append('pinataOptions', req.body.pinataOptions);
-        }
-
-        // Upload to Pinata
-        const response = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
-            method: 'POST',
+        // Test with Pinata's test authentication endpoint
+        const response = await fetch('https://api.pinata.cloud/data/testAuthentication', {
+            method: 'GET',
             headers: {
                 'pinata_api_key': pinataApiKey,
-                'pinata_secret_api_key': pinataSecretApiKey,
-                ...formData.getHeaders()
-            },
-            body: formData
+                'pinata_secret_api_key': pinataSecretApiKey
+            }
         });
 
-        if (!response.ok) {
+        if (response.ok) {
+            const result = await response.json();
+            res.json({ success: true, message: 'Pinata credentials are valid', result });
+        } else {
             const errorText = await response.text();
-            console.error('Pinata upload failed:', errorText);
-            throw new Error(`Pinata upload failed: ${response.status}`);
+            res.status(400).json({ error: 'Invalid Pinata credentials', details: errorText });
         }
 
-        const result = await response.json();
-        console.log('✅ IPFS upload successful:', result.IpfsHash);
+    } catch (error) {
+        console.error('Pinata test error:', error);
+        res.status(500).json({ error: 'Failed to test Pinata credentials' });
+    }
+});
 
-        res.json({
-            success: true,
-            ipfsHash: result.IpfsHash,
-            ipfsUrl: `https://ipfs.io/ipfs/${result.IpfsHash}`,
-            pinataUrl: `https://gateway.pinata.cloud/ipfs/${result.IpfsHash}`
+// Update meme with IPFS hash
+app.post('/api/memes/update-ipfs', async (req, res) => {
+    try {
+        const { originalImageUrl, ipfsHash, ipfsUrl } = req.body;
+
+        if (!originalImageUrl || !ipfsHash) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+
+        console.log('🔄 Updating meme with IPFS hash:', ipfsHash);
+
+        // Find and update the meme with the original image URL
+        const updatedMeme = await prisma.meme.updateMany({
+            where: {
+                imageUrl: originalImageUrl
+            },
+            data: {
+                ipfsHash: ipfsHash,
+                imageUrl: ipfsUrl || `https://ipfs.io/ipfs/${ipfsHash}`
+            }
         });
+
+        if (updatedMeme.count > 0) {
+            console.log(`✅ Updated ${updatedMeme.count} meme(s) with IPFS hash`);
+            res.json({
+                success: true,
+                updated: updatedMeme.count,
+                ipfsHash,
+                ipfsUrl: ipfsUrl || `https://ipfs.io/ipfs/${ipfsHash}`
+            });
+        } else {
+            console.warn('⚠️ No memes found with that image URL');
+            res.status(404).json({ error: 'No memes found with that image URL' });
+        }
 
     } catch (error) {
-        console.error('IPFS upload error:', error);
-        res.status(500).json({
-            error: 'Failed to upload to IPFS',
-            details: error.message
-        });
+        console.error('Error updating meme with IPFS:', error);
+        res.status(500).json({ error: 'Failed to update meme with IPFS hash' });
     }
 });
 

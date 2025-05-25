@@ -1,0 +1,35 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./crypto_memes.db"
+}
+
+model Meme {
+  id          String   @id @default(cuid())
+  imageUrl    String
+  text        String
+  type        String
+  corsMethod  String?
+  timestamp   DateTime @default(now())
+  dateCreated String
+  seed        Int?
+
+  @@map("memes")
+}
+
+model MemeStats {
+  id          String   @id @default(cuid())
+  totalMemes  Int      @default(0)
+  lastUpdated DateTime @default(now())
+
+  @@map("meme_stats")
+}
